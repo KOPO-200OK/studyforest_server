@@ -1,6 +1,6 @@
 # studyforest
 studyforest
-# 🌳 공숲 (GongSup)
+# 🌳 모여봐요 공부의 숲 
 
 > 한국사능력검정시험(한능검) 대비 스터디 & 문제풀이 플랫폼
 
