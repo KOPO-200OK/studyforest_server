@@ -25,6 +25,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
     runtimeOnly 'com.oracle.database.jdbc:ojdbc17:23.9.0.25.07'
+    runtimeOnly 'com.oracle.database.security:oraclepki:23.9.0.25.07'
 
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0'
 
