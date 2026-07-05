@@ -1,0 +1,38 @@
+# Copy the relevant document to application-univ.yml, application-cloud.yml,
+# or application-test.yml. Never commit the copied file or real credentials.
+
+---
+spring:
+  config:
+    activate:
+      on-profile: univ
+  datasource:
+    url: ${UNIV_DB_URL}
+    username: ${UNIV_DB_USERNAME}
+    password: ${UNIV_DB_PASSWORD}
+    driver-class-name: oracle.jdbc.OracleDriver
+
+---
+spring:
+  config:
+    activate:
+      on-profile: cloud
+  datasource:
+    url: ${CLOUD_DB_URL}
+    username: ${CLOUD_DB_USERNAME}
+    password: ${CLOUD_DB_PASSWORD}
+    driver-class-name: oracle.jdbc.OracleDriver
+    hikari:
+      data-source-properties:
+        oracle.net.tns_admin: ${ORACLE_WALLET_LOCATION:/Users/faker/SQLDEV/02_program/Wallet_DinkDB}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: ${TEST_DB_URL}
+    username: ${TEST_DB_USERNAME}
+    password: ${TEST_DB_PASSWORD}
+    driver-class-name: oracle.jdbc.OracleDriver

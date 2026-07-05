@@ -22,3 +22,38 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Local Spring profile configuration (secrets and connection details)
+src/main/resources/application-univ.yml
+src/main/resources/application-cloud.yml
+src/main/resources/application-test.yml
+
+# Oracle Wallet and local credentials
+wallet/
+Wallet_*/
+*.sso
+*.p12
+*.jks
+*.pem
+*.key
+ojdbc.properties
+tnsnames.ora
+sqlnet.ora
+cwallet.sso.lck
+ewallet.p12.lck
+
+# Environment files
+.env
+.env.*
+!.env.example
