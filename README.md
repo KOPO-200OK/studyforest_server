@@ -18,5 +18,5 @@ studyforest
 Backend API, DTO, package, ERD, and table conventions are documented in
 [`docs/backend-conventions.md`](docs/backend-conventions.md).
 
-팀원의 Oracle Cloud DB 설정 방법은
-[`docs/cloud-db-setup.md`](docs/cloud-db-setup.md)를 참고합니다.
+팀원의 Oracle DB 환경별 설정 방법은
+[`docs/db-setup.md`](docs/db-setup.md)를 참고합니다.
