@@ -24,7 +24,7 @@ spring:
     driver-class-name: oracle.jdbc.OracleDriver
     hikari:
       data-source-properties:
-        oracle.net.tns_admin: ${ORACLE_WALLET_LOCATION:/Users/faker/SQLDEV/02_program/Wallet_DinkDB}
+        oracle.net.tns_admin: ${ORACLE_WALLET_LOCATION}
 
 ---
 spring:
