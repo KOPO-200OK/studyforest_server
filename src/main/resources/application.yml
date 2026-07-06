@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: studyforest-server
+  jackson:
+    default-property-inclusion: non_null
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  web:
+    locale: ko_KR
+    locale-resolver: fixed
+
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
