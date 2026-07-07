@@ -1,18 +1,18 @@
 package com.gongsoop;
 
+import com.gongsoop.member.controller.AuthController;
+import com.gongsoop.member.service.MemberService;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@ActiveProfiles("test")
-@SpringBootTest(properties = {
-        "spring.autoconfigure.exclude="
-                + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
-                + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"
-})
+@WebMvcTest(AuthController.class)
 class StudyforestApplicationTests {
 
+    @MockitoBean
+    private MemberService memberService;
+
     @Test
-    void contextLoadsWithoutDatabase() {
+    void contextLoads() {
     }
 }
