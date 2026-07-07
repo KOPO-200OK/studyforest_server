@@ -17,3 +17,6 @@ server:
       charset: UTF-8
       enabled: true
       force: true
+
+jwt:
+  secret: ${JWT_SECRET}

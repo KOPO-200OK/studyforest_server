@@ -10,6 +10,7 @@ public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "USER_ID")
     private Long id;
 
     @Column(name = "NAME", nullable = false, length = 100)
@@ -24,6 +25,13 @@ public class Member {
     @Column(name = "PASSWORD", nullable = false, length = 255)
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "USER_ROLE", nullable = false, length = 20)
+    private MemberRole userRole;
+
+    @Column(name = "IS_DELETED", nullable = false)
+    private boolean isDeleted;
+
     protected Member() {
     }
 
@@ -32,6 +40,8 @@ public class Member {
         this.birthdate = birthdate;
         this.email = email;
         this.password = password;
+        this.userRole = MemberRole.USER;
+        this.isDeleted = false;
     }
 
     public Long getId() {
@@ -52,5 +62,21 @@ public class Member {
 
     public String getPassword() {
         return password;
+    }
+
+    public MemberRole getUserRole() {
+        return userRole;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void delete() {
+        this.isDeleted = true;
+    }
+
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 }
