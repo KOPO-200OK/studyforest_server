@@ -1,6 +1,7 @@
 package com.gongsoop.member.entity;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
 
 @Entity
@@ -23,7 +24,8 @@ public class Member {
     @Column(name = "PASSWORD", nullable = false, length = 255)
     private String password;
 
-    protected Member() {}
+    protected Member() {
+    }
 
     public Member(String name, LocalDate birthdate, String email, String password) {
         this.name = name;
@@ -32,11 +34,23 @@ public class Member {
         this.password = password;
     }
 
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public LocalDate getBirthdate() { return birthdate; }
-    public String getEmail() { return email; }
-    public String getPassword() { return password; }
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public LocalDate getBirthdate() {
+        return birthdate;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
 }
-
-

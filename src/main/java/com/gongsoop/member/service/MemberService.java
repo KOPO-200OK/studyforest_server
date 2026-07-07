@@ -1,7 +1,7 @@
 package com.gongsoop.member.service;
 
 import com.gongsoop.global.exception.DuplicateEmailException;
-import com.gongsoop.member.dto.SignupRequest;
+import com.gongsoop.member.dto.request.SignupRequest;
 import com.gongsoop.member.entity.Member;
 import com.gongsoop.member.repository.MemberRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
