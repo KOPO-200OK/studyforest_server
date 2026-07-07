@@ -1,7 +1,7 @@
 package com.gongsoop.member.controller;
 
 import com.gongsoop.global.response.ApiResponse;
-import com.gongsoop.member.dto.SignupRequest;
+import com.gongsoop.member.dto.request.SignupRequest;
 import com.gongsoop.member.service.MemberService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
