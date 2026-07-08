@@ -1,5 +1,7 @@
 package com.gongsoop.global.config;
 
+import com.gongsoop.global.security.CustomAccessDeniedHandler;
+import com.gongsoop.global.security.CustomAuthenticationEntryPoint;
 import com.gongsoop.global.security.JwtAuthenticationFilter;
 import com.gongsoop.global.security.JwtProvider;
 import org.springframework.context.annotation.Bean;
@@ -22,9 +24,17 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
 
-    public SecurityConfig(JwtProvider jwtProvider) {
+    public SecurityConfig(
+            JwtProvider jwtProvider,
+            CustomAuthenticationEntryPoint authenticationEntryPoint,
+            CustomAccessDeniedHandler accessDeniedHandler
+    ) {
         this.jwtProvider = jwtProvider;
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
     }
 
     @Bean
@@ -41,8 +51,18 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
+                )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs.yaml"
+                        ).permitAll()
                         .requestMatchers("/api/v1/mock-exams/**").authenticated()
                         .requestMatchers("/api/v1/study/**").authenticated()
                         .requestMatchers("/api/v1/ai/**").authenticated()
