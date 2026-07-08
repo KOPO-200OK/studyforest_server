@@ -46,6 +46,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/mock-exams/**").authenticated()
                         .requestMatchers("/api/v1/study/**").authenticated()
                         .requestMatchers("/api/v1/ai/**").authenticated()
+                        .requestMatchers("/api/v1/dashboard/**").authenticated()
+                        .requestMatchers("/api/v1/admin/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class)

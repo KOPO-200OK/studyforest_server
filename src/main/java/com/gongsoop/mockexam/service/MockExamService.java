@@ -282,7 +282,8 @@ public class MockExamService {
             String era,
             String category
     ) {
-        Specification<HistExamQuestion> specification = Specification.where(null);
+        Specification<HistExamQuestion> specification = (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("isDeleted"), 0);
 
         if (examRound != null) {
             specification = specification.and((root, query, criteriaBuilder) ->

@@ -304,6 +304,8 @@ public class QuestionBankService {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            predicates.add(criteriaBuilder.equal(root.get("isDeleted"), 0));
+
             if (examRound != null) {
                 predicates.add(criteriaBuilder.equal(root.get("id").get("examRound"), examRound));
             }
@@ -394,6 +396,27 @@ public class QuestionBankService {
 
     private String buildExplanation() {
         return "해설은 추후 AI 서버를 통해 생성될 예정입니다.";
+    }
+
+    private HistExamQuestion findActiveQuestion(Long questionId) {
+        HistExamQuestionId id = decodeQuestionId(questionId);
+
+        HistExamQuestion question = histExamQuestionRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        "QUESTION_NOT_FOUND",
+                        "문제를 찾을 수 없습니다",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if (Boolean.TRUE.equals(question.isDeleted())) {
+            throw new BusinessException(
+                    "QUESTION_NOT_FOUND",
+                    "문제를 찾을 수 없습니다",
+                    HttpStatus.NOT_FOUND
+            );
+        }
+
+        return question;
     }
 
     private HistExamQuestionId decodeQuestionId(Long questionId) {
