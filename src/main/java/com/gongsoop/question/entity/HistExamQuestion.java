@@ -45,6 +45,13 @@ public class HistExamQuestion {
     @Column(name = "CATEGORY")
     private String category;
 
+    @Column(name = "IS_DELETED")
+    private Integer isDeleted;
+
+    public Boolean isDeleted() {
+        return isDeleted != null && isDeleted == 1;
+    }
+
     protected HistExamQuestion() {
     }
 
@@ -107,4 +114,6 @@ public class HistExamQuestion {
     public Long getSyntheticQuestionId() {
         return getExamRound() * 1000L + getQNo();
     }
+
+
 }
