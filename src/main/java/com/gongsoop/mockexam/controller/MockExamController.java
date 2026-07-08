@@ -1,5 +1,8 @@
 package com.gongsoop.mockexam.controller;
 
+
+import com.gongsoop.mockexam.dto.response.MockExamSummaryResponse;
+import com.gongsoop.question.dto.response.PageResponse;
 import com.gongsoop.global.response.ApiResponse;
 import com.gongsoop.mockexam.dto.request.MockExamCreateRequest;
 import com.gongsoop.mockexam.dto.request.MockExamSubmitRequest;
@@ -62,6 +65,18 @@ public class MockExamController {
         return ApiResponse.success(
                 "모의고사 결과를 조회했습니다",
                 mockExamService.getMockExamResult(mockExamId, email)
+        );
+    }
+
+    @GetMapping
+    public ApiResponse<PageResponse<MockExamSummaryResponse>> getMockExamList(
+            @AuthenticationPrincipal String email,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ApiResponse.success(
+                "모의고사 목록을 조회했습니다",
+                mockExamService.getMockExamList(email, page, size)
         );
     }
 }

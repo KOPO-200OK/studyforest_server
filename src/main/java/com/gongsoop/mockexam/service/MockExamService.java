@@ -1,5 +1,10 @@
 package com.gongsoop.mockexam.service;
 
+import com.gongsoop.mockexam.dto.response.MockExamSummaryResponse;
+import com.gongsoop.question.dto.response.PageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import com.gongsoop.global.exception.BusinessException;
 import com.gongsoop.member.entity.Member;
 import com.gongsoop.member.repository.MemberRepository;
@@ -394,5 +399,44 @@ public class MockExamService {
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    public PageResponse<MockExamSummaryResponse> getMockExamList(String email, int page, int size) {
+        Long memberId = getCurrentMemberId(email);
+
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+
+        Page<HistMockExam> result = mockExamRepository.findByMemberIdOrderByStartedAtDesc(
+                memberId,
+                pageable
+        );
+
+        List<MockExamSummaryResponse> content = result.getContent().stream()
+                .map(this::toSummaryResponse)
+                .toList();
+
+        return new PageResponse<>(
+                content,
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.getNumber(),
+                result.getSize()
+        );
+    }
+
+    private MockExamSummaryResponse toSummaryResponse(HistMockExam mockExam) {
+        return new MockExamSummaryResponse(
+                mockExam.getMockExamId(),
+                mockExam.getTitle(),
+                mockExam.getTotalQuestionCount(),
+                mockExam.getCorrectCount(),
+                mockExam.getScore(),
+                mockExam.getStatus(),
+                mockExam.getStartedAt(),
+                mockExam.getSubmittedAt()
+        );
     }
 }
