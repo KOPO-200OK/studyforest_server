@@ -71,11 +71,93 @@ public class StudySession {
     protected StudySession() {
     }
 
+    public static StudySession start(
+            Member member,
+            StudyChannel studyChannel,
+            Seat seat,
+            String subject,
+            LocalDateTime now
+    ) {
+        StudySession session = new StudySession();
+        session.member = member;
+        session.studyChannel = studyChannel;
+        session.seat = seat;
+        session.subject = subject;
+        session.studyDate = now.toLocalDate();
+        session.status = StudySessionStatus.RUNNING;
+        session.startedAt = now;
+        session.lastResumedAt = now;
+        session.accumulatedSeconds = 0L;
+        session.version = 0L;
+        return session;
+    }
+
+    public void completeByUser(LocalDateTime now) {
+        terminate(StudySessionStatus.COMPLETED, StudySessionEndReason.USER_EXIT, now);
+    }
+
+    public void terminateByPauseTimeout(LocalDateTime now) {
+        terminate(StudySessionStatus.AUTO_TERMINATED, StudySessionEndReason.PAUSE_TIMEOUT, now);
+    }
+
+    public void terminateByReconnectTimeout(LocalDateTime now) {
+        terminate(StudySessionStatus.AUTO_TERMINATED, StudySessionEndReason.RECONNECT_TIMEOUT, now);
+    }
+
+    public void terminateByAdmin(LocalDateTime now) {
+        terminate(StudySessionStatus.FORCED_TERMINATED, StudySessionEndReason.ADMIN_FORCE_EXIT, now);
+    }
+
+    private void terminate(
+            StudySessionStatus terminalStatus,
+            StudySessionEndReason reason,
+            LocalDateTime now
+    ) {
+        accumulateRunningTime(now);
+        status = terminalStatus;
+        endReason = reason;
+        endedAt = now;
+        pausedAt = null;
+        pauseDeadlineAt = null;
+        resumeStatus = null;
+    }
+
+    private void accumulateRunningTime(LocalDateTime until) {
+        if (status == StudySessionStatus.RUNNING && lastResumedAt != null) {
+            long elapsedSeconds = java.time.Duration.between(lastResumedAt, until).getSeconds();
+            accumulatedSeconds += Math.max(elapsedSeconds, 0L);
+        }
+    }
+
     public Long getId() {
         return id;
     }
 
+    public StudyChannel getStudyChannel() {
+        return studyChannel;
+    }
+
+    public Seat getSeat() {
+        return seat;
+    }
+
     public StudySessionStatus getStatus() {
         return status;
+    }
+
+    public LocalDateTime getStartedAt() {
+        return startedAt;
+    }
+
+    public LocalDateTime getEndedAt() {
+        return endedAt;
+    }
+
+    public Long getAccumulatedSeconds() {
+        return accumulatedSeconds;
+    }
+
+    public StudySessionEndReason getEndReason() {
+        return endReason;
     }
 }

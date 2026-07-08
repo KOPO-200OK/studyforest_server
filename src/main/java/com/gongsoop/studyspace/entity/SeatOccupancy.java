@@ -50,11 +50,33 @@ public class SeatOccupancy {
     protected SeatOccupancy() {
     }
 
+    public static SeatOccupancy occupy(
+            StudyChannel studyChannel,
+            Seat seat,
+            Member member,
+            StudySession studySession,
+            LocalDateTime now
+    ) {
+        SeatOccupancy occupancy = new SeatOccupancy();
+        occupancy.studyChannel = studyChannel;
+        occupancy.seat = seat;
+        occupancy.member = member;
+        occupancy.studySession = studySession;
+        occupancy.occupiedAt = now;
+        occupancy.lastSeenAt = now;
+        occupancy.version = 0L;
+        return occupancy;
+    }
+
     public Long getId() {
         return id;
     }
 
     public Seat getSeat() {
         return seat;
+    }
+
+    public StudySession getStudySession() {
+        return studySession;
     }
 }
