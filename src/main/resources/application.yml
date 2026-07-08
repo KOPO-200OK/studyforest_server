@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: studyforest-server
   jackson:
@@ -20,3 +22,9 @@ server:
 
 jwt:
   secret: ${JWT_SECRET}
+
+ai:
+  server:
+    base-url: ${AI_SERVER_BASE_URL:http://127.0.0.1:8000}
+    connect-timeout-ms: ${AI_SERVER_CONNECT_TIMEOUT_MS:3000}
+    read-timeout-ms: ${AI_SERVER_READ_TIMEOUT_MS:35000}

@@ -26,6 +26,8 @@ dependencies {
 
     runtimeOnly 'com.oracle.database.jdbc:ojdbc17:23.9.0.25.07'
     runtimeOnly 'com.oracle.database.security:oraclepki:23.9.0.25.07'
+    runtimeOnly 'com.oracle.database.security:osdt_core:23.9.0.25.07'
+    runtimeOnly 'com.oracle.database.security:osdt_cert:23.9.0.25.07'
 
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'

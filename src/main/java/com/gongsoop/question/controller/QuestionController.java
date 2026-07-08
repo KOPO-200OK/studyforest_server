@@ -8,6 +8,7 @@ import com.gongsoop.question.dto.response.QuestionSummaryResponse;
 import com.gongsoop.question.dto.response.SolveResultResponse;
 import com.gongsoop.question.service.QuestionBankService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,11 +50,12 @@ public class QuestionController {
     @PostMapping("/{questionId}/solve")
     public ApiResponse<SolveResultResponse> solveQuestion(
             @PathVariable Long questionId,
-            @Valid @RequestBody SolveQuestionRequest request
+            @Valid @RequestBody SolveQuestionRequest request,
+            @AuthenticationPrincipal String email
     ) {
         return ApiResponse.success(
                 "채점이 완료되었습니다",
-                questionBankService.solveQuestion(questionId, request)
+                questionBankService.solveQuestion(questionId, request, email)
         );
     }
 
