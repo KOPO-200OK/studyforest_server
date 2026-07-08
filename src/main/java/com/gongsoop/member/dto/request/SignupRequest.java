@@ -2,6 +2,7 @@ package com.gongsoop.member.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -9,9 +10,11 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public record SignupRequest(
+        @NotBlank(message = "이름을 입력해주세요")
         @Size(max = 100, message = "이름은 100자 이하로 입력해주세요")
         String name,
 
+        @NotNull(message = "생년월일을 입력해주세요")
         @Past(message = "유효하지 않은 생년월일입니다")
         LocalDate birthdate,
 

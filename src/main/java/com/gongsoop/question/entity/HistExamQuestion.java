@@ -3,7 +3,6 @@ package com.gongsoop.question.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 
 @Entity
@@ -13,7 +12,6 @@ public class HistExamQuestion {
     @EmbeddedId
     private HistExamQuestionId id;
 
-    @Lob
     @Column(name = "Q_TEXT")
     private String questionText;
 
@@ -38,7 +36,6 @@ public class HistExamQuestion {
     @Column(name = "ANSWER")
     private Integer answer;
 
-    @Lob
     @Column(name = "Q_PASSAGE")
     private String passage;
 

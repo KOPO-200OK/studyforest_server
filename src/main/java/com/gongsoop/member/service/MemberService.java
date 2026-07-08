@@ -63,7 +63,12 @@ public class MemberService {
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         Member member = memberRepository.findByEmail(request.email())
-                .orElseThrow(() -> new BusinessException("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다", HttpStatus.UNAUTHORIZED));
+                .filter(m -> !m.isDeleted())
+                .orElseThrow(() -> new BusinessException(
+                        "INVALID_CREDENTIALS",
+                        "이메일 또는 비밀번호가 올바르지 않습니다",
+                        HttpStatus.UNAUTHORIZED
+                ));
 
         if (!passwordEncoder.matches(request.password(), member.getPassword())) {
             throw new BusinessException("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다", HttpStatus.UNAUTHORIZED);
