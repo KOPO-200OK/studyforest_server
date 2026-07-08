@@ -1,9 +1,8 @@
 package com.gongsoop.ai.controller;
 
 import com.gongsoop.ai.dto.request.ChatMessageRequest;
-import com.gongsoop.ai.dto.request.CreateChatSessionRequest;
 import com.gongsoop.ai.dto.request.GenerateAiQuestionRequest;
-import com.gongsoop.ai.dto.response.AiChatSessionResponse;
+import com.gongsoop.ai.dto.request.QuestionExplanationRequest;
 import com.gongsoop.ai.dto.response.ChatAnswerResponse;
 import com.gongsoop.ai.dto.response.GenerateAiQuestionResponse;
 import com.gongsoop.ai.service.AiService;
@@ -31,48 +30,34 @@ public class AiController {
         );
     }
 
-    @PostMapping("/chat-sessions")
-    public ApiResponse<AiChatSessionResponse> createChatSession(
-            @RequestBody(required = false) CreateChatSessionRequest request
-    ) {
-        CreateChatSessionRequest safeRequest = request == null
-                ? new CreateChatSessionRequest(null)
-                : request;
-
-        return ApiResponse.success(
-                "AI 채팅 세션이 생성되었습니다",
-                aiService.createSession(safeRequest)
-        );
-    }
-
-    @PostMapping("/chat-sessions/{chatSessionId}/messages")
-    public ApiResponse<ChatAnswerResponse> sendChatMessage(
-            @PathVariable Long chatSessionId,
+    @PostMapping("/chat")
+    public ApiResponse<ChatAnswerResponse> chat(
             @Valid @RequestBody ChatMessageRequest request
     ) {
         return ApiResponse.success(
-                "AI 답변이 생성되었습니다",
-                aiService.sendExamMessage(chatSessionId, request)
+                "AI 답변을 생성했습니다",
+                aiService.chat(request)
         );
     }
 
-    @PostMapping("/chat/exam")
-    public ApiResponse<ChatAnswerResponse> askExam(
+    @PostMapping("/motivation")
+    public ApiResponse<ChatAnswerResponse> motivation(
             @Valid @RequestBody ChatMessageRequest request
     ) {
         return ApiResponse.success(
-                "AI 답변이 생성되었습니다",
-                aiService.askExam(request)
+                "AI 동기부여 메시지를 생성했습니다",
+                aiService.motivation(request)
         );
     }
 
-    @PostMapping("/chat/motivation")
-    public ApiResponse<ChatAnswerResponse> askMotivation(
-            @Valid @RequestBody ChatMessageRequest request
+    @PostMapping("/questions/{questionId}/explanation")
+    public ApiResponse<ChatAnswerResponse> explainQuestion(
+            @PathVariable Long questionId,
+            @Valid @RequestBody QuestionExplanationRequest request
     ) {
         return ApiResponse.success(
-                "AI 답변이 생성되었습니다",
-                aiService.askMotivation(request)
+                "AI 문제 해설을 생성했습니다",
+                aiService.explainQuestion(questionId, request)
         );
     }
 }
