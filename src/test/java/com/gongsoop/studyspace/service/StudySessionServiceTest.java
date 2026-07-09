@@ -6,12 +6,14 @@ import com.gongsoop.member.repository.MemberRepository;
 import com.gongsoop.studyspace.dto.request.OccupySeatRequest;
 import com.gongsoop.studyspace.dto.response.StudySessionResponse;
 import com.gongsoop.studyspace.entity.*;
+import com.gongsoop.studyspace.config.StudySpaceRealtimeProperties;
 import com.gongsoop.studyspace.repository.SeatOccupancyRepository;
 import com.gongsoop.studyspace.repository.SeatRepository;
 import com.gongsoop.studyspace.repository.StudyChannelRepository;
 import com.gongsoop.studyspace.repository.StudySessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
@@ -32,6 +34,10 @@ class StudySessionServiceTest {
     private SeatRepository seatRepository;
     private StudySessionRepository sessionRepository;
     private SeatOccupancyRepository occupancyRepository;
+    private SeatHoldService seatHoldService;
+    private PresenceService presenceService;
+    private ApplicationEventPublisher eventPublisher;
+    private StudySpaceRealtimeProperties properties;
     private Clock clock;
     private StudySessionService service;
 
@@ -42,10 +48,17 @@ class StudySessionServiceTest {
         seatRepository = mock(SeatRepository.class);
         sessionRepository = mock(StudySessionRepository.class);
         occupancyRepository = mock(SeatOccupancyRepository.class);
+        seatHoldService = mock(SeatHoldService.class);
+        presenceService = mock(PresenceService.class);
+        eventPublisher = mock(ApplicationEventPublisher.class);
+        properties = new StudySpaceRealtimeProperties();
+        // 선점 락은 기본적으로 성공한다고 가정(경합 테스트가 아닌 한).
+        when(seatHoldService.tryHold(any(), any(), any())).thenReturn(Optional.of("token:7"));
         clock = Clock.fixed(Instant.parse("2026-07-08T06:05:00Z"), ZoneId.of("Asia/Seoul"));
         service = new StudySessionService(
                 memberRepository, channelRepository, seatRepository,
-                sessionRepository, occupancyRepository, clock);
+                sessionRepository, occupancyRepository, seatHoldService,
+                presenceService, eventPublisher, properties, clock);
     }
 
     @Test

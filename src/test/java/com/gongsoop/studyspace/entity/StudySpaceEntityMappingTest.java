@@ -32,10 +32,10 @@ class StudySpaceEntityMappingTest {
 
     @Test
     void mapsSessionAndOccupancyForeignKeys() throws NoSuchFieldException {
-        assertJoinColumn(StudySession.class, "member", "MEMBER_ID");
+        assertJoinColumn(StudySession.class, "member", "USER_ID");
         assertJoinColumn(StudySession.class, "studyChannel", "STUDY_CHANNEL_ID");
         assertJoinColumn(StudySession.class, "seat", "SEAT_ID");
-        assertJoinColumn(SeatOccupancy.class, "member", "MEMBER_ID");
+        assertJoinColumn(SeatOccupancy.class, "member", "USER_ID");
         assertJoinColumn(SeatOccupancy.class, "studyChannel", "STUDY_CHANNEL_ID");
         assertJoinColumn(SeatOccupancy.class, "seat", "SEAT_ID");
         assertJoinColumn(SeatOccupancy.class, "studySession", "STUDY_SESSION_ID");

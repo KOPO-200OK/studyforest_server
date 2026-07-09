@@ -1,0 +1,14 @@
+# 로컬/팀 개발용 Redis. 실시간 좌석(선점·presence·pub/sub) 계층에 사용.
+# 사용: docker compose up -d redis   (또는 로컬 설치된 redis-server 사용)
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: studyforest-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5

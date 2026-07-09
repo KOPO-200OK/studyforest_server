@@ -60,6 +60,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/health").permitAll()
 
+                        // WebSocket 핸드셰이크는 허용, 실제 인증은 STOMP CONNECT에서 검사
+                        .requestMatchers("/ws-studyspace/**").permitAll()
+
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
