@@ -33,7 +33,8 @@ public class JangwonApplication {
     @Column(name = "CHARACTER_IMAGE_URL", length = 1000)
     private String characterImageUrl;
 
-    @Column(name = "CERTIFICATE_IMAGE_URL", nullable = false, length = 1000)
+    @Lob
+    @Column(name = "CERTIFICATE_IMAGE_URL", nullable = false)
     private String certificateImageUrl;
 
     @Enumerated(EnumType.STRING)

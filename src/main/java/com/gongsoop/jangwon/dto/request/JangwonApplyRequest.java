@@ -16,8 +16,8 @@ public record JangwonApplyRequest(
         @Size(max = 1000, message = "캐릭터 이미지 URL은 1000자 이하로 입력해주세요")
         String characterImageUrl,
 
-        @NotBlank(message = "합격 인증 이미지 URL을 입력해주세요")
-        @Size(max = 1000, message = "합격 인증 이미지 URL은 1000자 이하로 입력해주세요")
+        @NotBlank(message = "합격 인증 이미지를 입력해주세요")
+        @Size(max = 5000000, message = "합격 인증 이미지는 5MB 이하로 입력해주세요")
         String certificateImageUrl
 ) {
 }

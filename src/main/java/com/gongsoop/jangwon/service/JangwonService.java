@@ -197,6 +197,18 @@ public class JangwonService {
         return JangwonApplicationResponse.from(application);
     }
 
+    @Transactional
+    public void delete(
+            String email,
+            Long jangwonApplicationId
+    ) {
+        validateAdmin(email);
+
+        JangwonApplication application = getApplication(jangwonApplicationId);
+
+        jangwonApplicationRepository.delete(application);
+    }
+
     private JangwonApplication getApplication(Long jangwonApplicationId) {
         return jangwonApplicationRepository.findById(jangwonApplicationId)
                 .orElseThrow(() -> new BusinessException(

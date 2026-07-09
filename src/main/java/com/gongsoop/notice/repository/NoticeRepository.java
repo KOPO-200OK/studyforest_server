@@ -19,8 +19,7 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
             SELECT n
             FROM Notice n
             WHERE (:keyword IS NULL
-                   OR LOWER(n.title) LIKE LOWER(:keyword)
-                   OR LOWER(n.content) LIKE LOWER(:keyword))
+                   OR LOWER(n.title) LIKE LOWER(:keyword))
               AND (:isPublished IS NULL OR n.isPublished = :isPublished)
             """)
     Page<Notice> searchForAdmin(
