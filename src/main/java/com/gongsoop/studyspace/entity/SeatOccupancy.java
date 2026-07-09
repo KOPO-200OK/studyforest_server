@@ -24,7 +24,7 @@ public class SeatOccupancy {
     private Seat seat;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "MEMBER_ID", nullable = false)
+    @JoinColumn(name = "USER_ID", nullable = false)
     private Member member;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)

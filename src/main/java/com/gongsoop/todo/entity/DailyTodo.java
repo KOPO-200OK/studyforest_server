@@ -19,7 +19,7 @@ public class DailyTodo {
     @Column(name = "DAILY_TODO_ID")
     private Long todoId;
 
-    @Column(name = "MEMBER_ID", nullable = false)
+    @Column(name = "USER_ID", nullable = false)
     private Long memberId;
 
     @Column(name = "CONTENT", nullable = false, length = 500)
