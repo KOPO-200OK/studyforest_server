@@ -17,7 +17,7 @@ public class StudySession {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "MEMBER_ID", nullable = false)
+    @JoinColumn(name = "USER_ID", nullable = false)
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
