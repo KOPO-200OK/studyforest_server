@@ -66,4 +66,17 @@ public class AdminJangwonController {
                 jangwonService.reject(email, jangwonApplicationId, request)
         );
     }
+
+    @DeleteMapping("/applications/{jangwonApplicationId}")
+    public ApiResponse<Void> deleteApplication(
+            @AuthenticationPrincipal String email,
+            @PathVariable Long jangwonApplicationId
+    ) {
+        jangwonService.delete(email, jangwonApplicationId);
+
+        return ApiResponse.success(
+                "장원급제 신청을 삭제했습니다",
+                null
+        );
+    }
 }

@@ -21,6 +21,7 @@ public class AdminNoticeController {
         this.noticeService = noticeService;
     }
 
+    @GetMapping
     public ApiResponse<PageResponse<NoticeSummaryResponse>> getAdminNotices(
             @AuthenticationPrincipal String email,
             @RequestParam(defaultValue = "0") int page,
