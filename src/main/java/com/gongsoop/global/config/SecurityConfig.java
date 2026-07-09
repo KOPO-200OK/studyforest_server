@@ -1,5 +1,6 @@
 package com.gongsoop.global.config;
 
+import org.springframework.http.HttpMethod;
 import com.gongsoop.global.security.CustomAccessDeniedHandler;
 import com.gongsoop.global.security.CustomAuthenticationEntryPoint;
 import com.gongsoop.global.security.JwtAuthenticationFilter;
@@ -58,17 +59,34 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/health").permitAll()
+
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml"
                         ).permitAll()
+
+                        // 공지사항: 사용자는 조회만 가능
+                        .requestMatchers(HttpMethod.GET, "/api/v1/notices/**").permitAll()
+
+                        // 장원급제: 승인된 목록은 공개 조회 가능, 신청/내역은 로그인 필요
+                        .requestMatchers(HttpMethod.GET, "/api/v1/jangwon/applications/me").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/jangwon/applications").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/jangwon/**").permitAll()
+
+                        // 관리자 API는 관리자만 접근 가능
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+
+                        // 로그인 필요 API
                         .requestMatchers("/api/v1/mock-exams/**").authenticated()
                         .requestMatchers("/api/v1/study/**").authenticated()
                         .requestMatchers("/api/v1/ai/**").authenticated()
                         .requestMatchers("/api/v1/dashboard/**").authenticated()
-                        .requestMatchers("/api/v1/admin/**").authenticated()
+                        .requestMatchers("/api/v1/todos/**").authenticated()
+                        .requestMatchers("/api/v1/questions/**").authenticated()
+                        .requestMatchers("/api/v1/members/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class)

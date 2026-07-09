@@ -8,6 +8,9 @@ import com.gongsoop.notice.dto.response.NoticeSummaryResponse;
 import com.gongsoop.notice.entity.Notice;
 import com.gongsoop.notice.repository.NoticeRepository;
 import com.gongsoop.question.dto.response.PageResponse;
+import com.gongsoop.member.entity.Member;
+import com.gongsoop.member.entity.MemberRole;
+import com.gongsoop.member.repository.MemberRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -20,9 +23,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class NoticeService {
 
     private final NoticeRepository noticeRepository;
+    private final MemberRepository memberRepository;
 
-    public NoticeService(NoticeRepository noticeRepository) {
+    public NoticeService(
+            NoticeRepository noticeRepository,
+            MemberRepository memberRepository
+    ) {
         this.noticeRepository = noticeRepository;
+        this.memberRepository = memberRepository;
     }
 
     public PageResponse<NoticeSummaryResponse> getPublicNotices(int page, int size) {
@@ -45,11 +53,14 @@ public class NoticeService {
     }
 
     public PageResponse<NoticeSummaryResponse> getAdminNotices(
+            String email,
             int page,
             int size,
             String keyword,
             Boolean isPublished
     ) {
+        validateAdmin(email);
+
         PageRequest pageRequest = createPageRequest(page, size);
 
         String searchKeyword = hasText(keyword) ? "%" + keyword.trim() + "%" : null;
@@ -64,7 +75,9 @@ public class NoticeService {
         return toSummaryPageResponse(noticePage);
     }
 
-    public NoticeDetailResponse getAdminNoticeDetail(Long noticeId) {
+    public NoticeDetailResponse getAdminNoticeDetail(String email, Long noticeId) {
+        validateAdmin(email);
+
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(
                         "NOTICE_NOT_FOUND",
@@ -76,7 +89,9 @@ public class NoticeService {
     }
 
     @Transactional
-    public NoticeDetailResponse createNotice(NoticeCreateRequest request) {
+    public NoticeDetailResponse createNotice(String email, NoticeCreateRequest request) {
+        validateAdmin(email);
+
         Notice notice = Notice.create(
                 request.title().trim(),
                 request.content().trim(),
@@ -91,9 +106,12 @@ public class NoticeService {
 
     @Transactional
     public NoticeDetailResponse updateNotice(
+            String email,
             Long noticeId,
             NoticeUpdateRequest request
     ) {
+        validateAdmin(email);
+
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(
                         "NOTICE_NOT_FOUND",
@@ -112,7 +130,9 @@ public class NoticeService {
     }
 
     @Transactional
-    public void deleteNotice(Long noticeId) {
+    public void deleteNotice(String email, Long noticeId) {
+        validateAdmin(email);
+
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(
                         "NOTICE_NOT_FOUND",
@@ -153,5 +173,31 @@ public class NoticeService {
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    private void validateAdmin(String email) {
+        if (!hasText(email)) {
+            throw new BusinessException(
+                    "UNAUTHORIZED",
+                    "로그인이 필요합니다",
+                    HttpStatus.UNAUTHORIZED
+            );
+        }
+
+        Member member = memberRepository.findByEmail(email)
+                .filter(m -> !m.isDeleted())
+                .orElseThrow(() -> new BusinessException(
+                        "MEMBER_NOT_FOUND",
+                        "회원 정보를 찾을 수 없습니다",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        if (member.getUserRole() != MemberRole.ADMIN) {
+            throw new BusinessException(
+                    "ADMIN_FORBIDDEN",
+                    "관리자만 접근할 수 있습니다",
+                    HttpStatus.FORBIDDEN
+            );
+        }
     }
 }
