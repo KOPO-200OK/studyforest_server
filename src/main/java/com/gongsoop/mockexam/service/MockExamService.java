@@ -31,6 +31,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.gongsoop.mockexam.dto.request.MockExamSaveAnswersRequest;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -119,6 +120,47 @@ public class MockExamService {
     }
 
     @Transactional
+    public void saveMockExamAnswers(Long mockExamId, MockExamSaveAnswersRequest request, String email) {
+        Long memberId = getCurrentMemberId(email);
+        HistMockExam mockExam = getMyMockExam(mockExamId, memberId);
+
+        if (mockExam.isSubmitted()) {
+            throw new BusinessException(
+                    "MOCK_EXAM_ALREADY_SUBMITTED",
+                    "이미 제출된 모의고사는 답안을 수정할 수 없습니다",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        List<HistMockExamQuestion> examQuestions =
+                mockExamQuestionRepository.findByMockExamIdOrderByQuestionOrderAsc(mockExamId);
+
+        Map<Long, Integer> answerMap = toAnswerMap(request.answers());
+
+        Set<Long> expectedQuestionIds = examQuestions.stream()
+                .map(q -> q.getQuestion().getSyntheticQuestionId())
+                .collect(Collectors.toSet());
+
+        if (!expectedQuestionIds.containsAll(answerMap.keySet())) {
+            throw new BusinessException(
+                    "INVALID_MOCK_EXAM_ANSWERS",
+                    "해당 모의고사에 포함되지 않은 문제가 있습니다",
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+
+        for (HistMockExamQuestion examQuestion : examQuestions) {
+            Long questionId = examQuestion.getQuestion().getSyntheticQuestionId();
+
+            if (answerMap.containsKey(questionId)) {
+                examQuestion.mark(answerMap.get(questionId));
+            }
+        }
+
+        mockExamQuestionRepository.saveAll(examQuestions);
+    }
+
+    @Transactional
     public MockExamResultResponse submitMockExam(Long mockExamId, MockExamSubmitRequest request, String email) {
         Long memberId = getCurrentMemberId(email);
         HistMockExam mockExam = getMyMockExam(mockExamId, memberId);
@@ -134,7 +176,9 @@ public class MockExamService {
         List<HistMockExamQuestion> examQuestions =
                 mockExamQuestionRepository.findByMockExamIdOrderByQuestionOrderAsc(mockExamId);
 
-        Map<Long, Integer> answerMap = toAnswerMap(request.answers());
+        Map<Long, Integer> answerMap = request == null
+                ? toSavedAnswerMap(examQuestions)
+                : toAnswerMap(request.answers());
 
         Set<Long> expectedQuestionIds = examQuestions.stream()
                 .map(q -> q.getQuestion().getSyntheticQuestionId())
@@ -215,6 +259,27 @@ public class MockExamService {
             }
 
             answerMap.put(answer.questionId(), answer.selectedOptionId());
+        }
+
+        return answerMap;
+    }
+
+    private Map<Long, Integer> toSavedAnswerMap(List<HistMockExamQuestion> examQuestions) {
+        Map<Long, Integer> answerMap = new HashMap<>();
+
+        for (HistMockExamQuestion examQuestion : examQuestions) {
+            if (examQuestion.getSelectedAnswer() == null) {
+                throw new BusinessException(
+                        "INVALID_MOCK_EXAM_ANSWERS",
+                        "모의고사의 모든 문제에 답안을 제출해야 합니다",
+                        HttpStatus.BAD_REQUEST
+                );
+            }
+
+            answerMap.put(
+                    examQuestion.getQuestion().getSyntheticQuestionId(),
+                    examQuestion.getSelectedAnswer()
+            );
         }
 
         return answerMap;
@@ -319,6 +384,7 @@ public class MockExamService {
         List<MockExamQuestionResponse> questionResponses = questions.stream()
                 .map(q -> new MockExamQuestionResponse(
                         q.getQuestionOrder(),
+                        q.getSelectedAnswer(),
                         toQuestionDetailResponse(q.getQuestion(), false)
                 ))
                 .toList();

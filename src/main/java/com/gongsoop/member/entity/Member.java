@@ -10,7 +10,7 @@ public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "MEMBER_ID")
+    @Column(name = "USER_ID")
     private Long id;
 
     @Column(name = "NAME", nullable = false, length = 100)

@@ -76,7 +76,7 @@ public class QuestionBankService {
     }
 
     public QuestionDetailResponse getQuestion(Long questionId) {
-        HistExamQuestion question = getQuestionEntity(questionId);
+        HistExamQuestion question = findActiveQuestion(questionId);
         return toDetail(question, false);
     }
 
@@ -87,7 +87,7 @@ public class QuestionBankService {
             String email
     ) {
         Long memberId = getCurrentMemberId(email);
-        HistExamQuestion question = getQuestionEntity(questionId);
+        HistExamQuestion question = findActiveQuestion(questionId);
 
         boolean isCorrect = question.getAnswer().equals(request.selectedOptionId());
 

@@ -8,15 +8,16 @@ public record MemberResponse(
         Long memberId,
         String name,
         LocalDate birthdate,
-        String email
+        String email,
+        String userRole
 ) {
-
     public static MemberResponse from(Member member) {
         return new MemberResponse(
                 member.getId(),
                 member.getName(),
                 member.getBirthdate(),
-                member.getEmail()
+                member.getEmail(),
+                member.getUserRole().name()
         );
     }
 }
