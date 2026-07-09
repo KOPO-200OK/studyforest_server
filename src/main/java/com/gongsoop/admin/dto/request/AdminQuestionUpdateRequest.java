@@ -45,6 +45,7 @@ public record AdminQuestionUpdateRequest(
         @Size(max = 100, message = "분류는 100자 이하로 입력해주세요")
         String category,
 
+        @NotNull(message = "삭제 여부를 입력해주세요")
         Boolean isDeleted
 ) {
 }

@@ -353,7 +353,7 @@ public class AiService {
         } catch (org.springframework.web.client.RestClientResponseException e) {
             throw new BusinessException(
                     "AI_SERVER_RESPONSE_ERROR",
-                    "AI 서버 응답 오류: status=" + e.getStatusCode() + ", body=" + e.getResponseBodyAsString(),
+                    "AI 서버 응답 처리 중 오류가 발생했습니다",
                     HttpStatus.BAD_GATEWAY
             );
 

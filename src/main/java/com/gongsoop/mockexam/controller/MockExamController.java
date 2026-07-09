@@ -1,14 +1,14 @@
 package com.gongsoop.mockexam.controller;
 
-
-import com.gongsoop.mockexam.dto.response.MockExamSummaryResponse;
-import com.gongsoop.question.dto.response.PageResponse;
 import com.gongsoop.global.response.ApiResponse;
 import com.gongsoop.mockexam.dto.request.MockExamCreateRequest;
+import com.gongsoop.mockexam.dto.request.MockExamSaveAnswersRequest;
 import com.gongsoop.mockexam.dto.request.MockExamSubmitRequest;
 import com.gongsoop.mockexam.dto.response.MockExamResultResponse;
 import com.gongsoop.mockexam.dto.response.MockExamStartResponse;
+import com.gongsoop.mockexam.dto.response.MockExamSummaryResponse;
 import com.gongsoop.mockexam.service.MockExamService;
+import com.gongsoop.question.dto.response.PageResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -45,10 +45,20 @@ public class MockExamController {
         );
     }
 
+    @PatchMapping("/{mockExamId}/answers")
+    public ApiResponse<Void> saveMockExamAnswers(
+            @PathVariable Long mockExamId,
+            @Valid @RequestBody MockExamSaveAnswersRequest request,
+            @AuthenticationPrincipal String email
+    ) {
+        mockExamService.saveMockExamAnswers(mockExamId, request, email);
+        return ApiResponse.success("모의고사 답안을 저장했습니다");
+    }
+
     @PostMapping("/{mockExamId}/submit")
     public ApiResponse<MockExamResultResponse> submitMockExam(
             @PathVariable Long mockExamId,
-            @Valid @RequestBody MockExamSubmitRequest request,
+            @Valid @RequestBody(required = false) MockExamSubmitRequest request,
             @AuthenticationPrincipal String email
     ) {
         return ApiResponse.success(
