@@ -43,6 +43,12 @@ public class InquiryService {
         this.memberRepository = memberRepository;
     }
 
+    // 공개: 비밀글 제외 전체 문의 목록
+    public PageResponse<InquirySummaryResponse> getPublicInquiries(int page, int size) {
+        Page<Inquiry> inquiryPage = inquiryRepository.findByIsSecretFalse(createPageRequest(page, size));
+        return toSummaryPageResponse(inquiryPage);
+    }
+
     // 사용자: 내 문의 목록
     public PageResponse<InquirySummaryResponse> getMyInquiries(String email, int page, int size) {
         Member member = findActiveMember(email);

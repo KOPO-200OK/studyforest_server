@@ -81,7 +81,8 @@ public class SecurityConfig {
                         // 관리자 API는 관리자만 접근 가능
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
-                        // 문의하기: 로그인한 사용자만 접근 가능
+                        // 문의하기: 공개 목록은 누구나, 나머지는 로그인 필요
+                        .requestMatchers(HttpMethod.GET, "/api/v1/inquiries/public").permitAll()
                         .requestMatchers("/api/v1/inquiries/**").authenticated()
 
                         // 로그인 필요 API
