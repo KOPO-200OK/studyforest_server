@@ -68,15 +68,48 @@ public class SeatOccupancy {
         return occupancy;
     }
 
+    /** heartbeat 확인. 마지막 접속 시각을 갱신하고 끊김 판정 흔적을 지운다(재접속 포함). */
+    public void touch(LocalDateTime now) {
+        this.lastSeenAt = now;
+        this.disconnectedAt = null;
+        this.reconnectDeadlineAt = null;
+    }
+
+    /** 연결 중단 판정. 자동 퇴실 예정 시각(재접속 제한)을 함께 기록한다. */
+    public void markDisconnected(LocalDateTime now, LocalDateTime reconnectDeadline) {
+        this.disconnectedAt = now;
+        this.reconnectDeadlineAt = reconnectDeadline;
+    }
+
     public Long getId() {
         return id;
+    }
+
+    public StudyChannel getStudyChannel() {
+        return studyChannel;
     }
 
     public Seat getSeat() {
         return seat;
     }
 
+    public Member getMember() {
+        return member;
+    }
+
     public StudySession getStudySession() {
         return studySession;
+    }
+
+    public LocalDateTime getLastSeenAt() {
+        return lastSeenAt;
+    }
+
+    public LocalDateTime getDisconnectedAt() {
+        return disconnectedAt;
+    }
+
+    public LocalDateTime getReconnectDeadlineAt() {
+        return reconnectDeadlineAt;
     }
 }

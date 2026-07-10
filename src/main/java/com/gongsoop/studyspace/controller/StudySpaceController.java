@@ -3,6 +3,7 @@ package com.gongsoop.studyspace.controller;
 import com.gongsoop.global.response.ApiResponse;
 import com.gongsoop.studyspace.dto.request.OccupySeatRequest;
 import com.gongsoop.studyspace.dto.response.SeatStatusResponse;
+import com.gongsoop.studyspace.dto.response.SessionTickResponse;
 import com.gongsoop.studyspace.dto.response.StudyChannelResponse;
 import com.gongsoop.studyspace.dto.response.StudyRoomResponse;
 import com.gongsoop.studyspace.dto.response.StudySessionResponse;
@@ -74,6 +75,41 @@ public class StudySpaceController {
         return ApiResponse.success(
                 "좌석에서 퇴실했습니다",
                 studySessionService.leaveSeat(studySessionId, email)
+        );
+    }
+
+    // heartbeat의 주 경로는 WebSocket이며, 아래는 WS 미지원 환경을 위한 REST 폴백이다.
+
+    @PostMapping("/study-sessions/{studySessionId}/heartbeat")
+    public ApiResponse<SessionTickResponse> heartbeat(
+            @PathVariable Long studySessionId,
+            @AuthenticationPrincipal String email
+    ) {
+        return ApiResponse.success(
+                "접속 상태를 갱신했습니다",
+                studySessionService.heartbeat(studySessionId, email)
+        );
+    }
+
+    @PatchMapping("/study-sessions/{studySessionId}/pause")
+    public ApiResponse<SessionTickResponse> pause(
+            @PathVariable Long studySessionId,
+            @AuthenticationPrincipal String email
+    ) {
+        return ApiResponse.success(
+                "학습을 일시정지했습니다",
+                studySessionService.pause(studySessionId, email)
+        );
+    }
+
+    @PatchMapping("/study-sessions/{studySessionId}/resume")
+    public ApiResponse<SessionTickResponse> resume(
+            @PathVariable Long studySessionId,
+            @AuthenticationPrincipal String email
+    ) {
+        return ApiResponse.success(
+                "학습을 재개했습니다",
+                studySessionService.resume(studySessionId, email)
         );
     }
 }

@@ -92,6 +92,55 @@ public class StudySession {
         return session;
     }
 
+    /** RUNNING이 아니면 no-op. pauseDeadline은 서버 정책값을 넘겨받는다. */
+    public void pause(LocalDateTime now, LocalDateTime pauseDeadline) {
+        if (status != StudySessionStatus.RUNNING) {
+            return;
+        }
+        accumulateRunningTime(now);
+        status = StudySessionStatus.PAUSED;
+        pausedAt = now;
+        pauseDeadlineAt = pauseDeadline;
+    }
+
+    /** PAUSED가 아니면 no-op. */
+    public void resume(LocalDateTime now) {
+        if (status != StudySessionStatus.PAUSED) {
+            return;
+        }
+        status = StudySessionStatus.RUNNING;
+        lastResumedAt = now;
+        pausedAt = null;
+        pauseDeadlineAt = null;
+    }
+
+    /**
+     * 활성 상태가 아니면 no-op. 공부 시간은 lastSeenAt까지만 인정하고, 복구용 상태를
+     * resumeStatus에 보존한다(PAUSED였다면 pauseDeadline은 유지).
+     */
+    public void disconnect(LocalDateTime lastSeenAt) {
+        if (status != StudySessionStatus.RUNNING && status != StudySessionStatus.PAUSED) {
+            return;
+        }
+        resumeStatus = status;
+        accumulateRunningTime(lastSeenAt);
+        status = StudySessionStatus.DISCONNECTED;
+    }
+
+    /** DISCONNECTED가 아니면 no-op. 끊긴 구간을 제외하기 위해 RUNNING 복구 시 lastResumedAt을 재설정. */
+    public void reconnect(LocalDateTime now) {
+        if (status != StudySessionStatus.DISCONNECTED) {
+            return;
+        }
+        StudySessionStatus restored =
+                resumeStatus == null ? StudySessionStatus.RUNNING : resumeStatus;
+        status = restored;
+        if (restored == StudySessionStatus.RUNNING) {
+            lastResumedAt = now;
+        }
+        resumeStatus = null;
+    }
+
     public void completeByUser(LocalDateTime now) {
         terminate(StudySessionStatus.COMPLETED, StudySessionEndReason.USER_EXIT, now);
     }
@@ -108,11 +157,29 @@ public class StudySession {
         terminate(StudySessionStatus.FORCED_TERMINATED, StudySessionEndReason.ADMIN_FORCE_EXIT, now);
     }
 
+    public boolean isTerminal() {
+        return status == StudySessionStatus.COMPLETED
+                || status == StudySessionStatus.AUTO_TERMINATED
+                || status == StudySessionStatus.FORCED_TERMINATED;
+    }
+
+    /** 화면 표시용 누적 공부 시간(초). RUNNING이면 마지막 재개 이후 경과분을 더한다. */
+    public long elapsedSeconds(LocalDateTime now) {
+        long base = accumulatedSeconds == null ? 0L : accumulatedSeconds;
+        if (status == StudySessionStatus.RUNNING && lastResumedAt != null) {
+            base += Math.max(java.time.Duration.between(lastResumedAt, now).getSeconds(), 0L);
+        }
+        return base;
+    }
+
     private void terminate(
             StudySessionStatus terminalStatus,
             StudySessionEndReason reason,
             LocalDateTime now
     ) {
+        if (isTerminal()) {
+            return;
+        }
         accumulateRunningTime(now);
         status = terminalStatus;
         endReason = reason;
@@ -133,8 +200,24 @@ public class StudySession {
         return id;
     }
 
+    public Member getMember() {
+        return member;
+    }
+
     public StudyChannel getStudyChannel() {
         return studyChannel;
+    }
+
+    public StudySessionStatus getResumeStatus() {
+        return resumeStatus;
+    }
+
+    public LocalDateTime getLastResumedAt() {
+        return lastResumedAt;
+    }
+
+    public LocalDateTime getPauseDeadlineAt() {
+        return pauseDeadlineAt;
     }
 
     public Seat getSeat() {
