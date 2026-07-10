@@ -15,7 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,15 +74,18 @@ public class StudySpaceQueryService {
             );
         }
 
-        Set<Long> occupiedSeatIds = seatOccupancyRepository.findAllByStudyChannel_Id(studyChannelId)
+        Map<Long, SeatOccupancy> occupancyBySeatId = seatOccupancyRepository
+                .findAllByStudyChannel_Id(studyChannelId)
                 .stream()
-                .map(SeatOccupancy::getSeat)
-                .map(seat -> seat.getId())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toMap(occupancy -> occupancy.getSeat().getId(), Function.identity()));
 
         return seatRepository.findAllByStudyRoom_IdOrderBySeatNoAsc(channel.getStudyRoom().getId())
                 .stream()
-                .map(seat -> SeatStatusResponse.of(seat, occupiedSeatIds.contains(seat.getId())))
+                .map(seat -> {
+                    SeatOccupancy occupancy = occupancyBySeatId.get(seat.getId());
+                    Integer characterId = occupancy == null ? null : occupancy.getMember().getCharacterId();
+                    return SeatStatusResponse.of(seat, characterId);
+                })
                 .toList();
     }
 

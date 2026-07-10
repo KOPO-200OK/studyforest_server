@@ -53,8 +53,8 @@ class StudySpaceControllerTest {
     void returnsOccupiedAndDisabledSeatStates() throws Exception {
         when(studySpaceQueryService.getSeatStatuses(3L))
                 .thenReturn(List.of(
-                        new SeatStatusResponse(10L, 1, true, true),
-                        new SeatStatusResponse(11L, 2, false, false)
+                        new SeatStatusResponse(10L, 1, true, true, 3),
+                        new SeatStatusResponse(11L, 2, false, false, null)
                 ));
 
         mockMvc.perform(get("/api/v1/study-channels/3/seats"))

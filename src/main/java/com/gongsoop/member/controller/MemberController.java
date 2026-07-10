@@ -1,10 +1,15 @@
 package com.gongsoop.member.controller;
 
 import com.gongsoop.global.response.ApiResponse;
+import com.gongsoop.member.dto.request.UpdateCharacterRequest;
+import com.gongsoop.member.dto.response.CharacterResponse;
 import com.gongsoop.member.service.MemberService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,5 +27,13 @@ public class MemberController {
     public ResponseEntity<ApiResponse<Void>> withdraw(@AuthenticationPrincipal String email) {
         memberService.withdraw(email);
         return ResponseEntity.ok(ApiResponse.success("회원탈퇴가 완료되었습니다"));
+    }
+
+    @PatchMapping("/me/character")
+    public ApiResponse<CharacterResponse> updateCharacter(
+            @Valid @RequestBody UpdateCharacterRequest request,
+            @AuthenticationPrincipal String email
+    ) {
+        return ApiResponse.success("캐릭터를 변경했습니다", memberService.updateCharacter(email, request));
     }
 }

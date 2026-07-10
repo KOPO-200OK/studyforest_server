@@ -324,10 +324,7 @@ public class StudySessionService {
                 channelId,
                 seat.getId(),
                 seat.getSeatNo(),
-                member.getName(),
-                session.getId(),
-                session.getStatus(),
-                at
+                type == SeatEventMessage.Type.VACATED ? null : member.getCharacterId()
         );
         eventPublisher.publishEvent(new SeatChangedEvent(message));
     }
