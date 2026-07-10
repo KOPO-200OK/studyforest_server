@@ -24,6 +24,10 @@ public class Seat {
     @Column(name = "IS_ACTIVE", nullable = false, length = 1)
     private Boolean active;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "STUDY_ZONE_ID")
+    private StudyZone studyZone;
+
     protected Seat() {
     }
 
@@ -41,5 +45,9 @@ public class Seat {
 
     public boolean isActive() {
         return Boolean.TRUE.equals(active);
+    }
+
+    public StudyZone getStudyZone() {
+        return studyZone;
     }
 }

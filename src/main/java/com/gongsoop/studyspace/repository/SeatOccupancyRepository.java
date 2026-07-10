@@ -14,11 +14,14 @@ public interface SeatOccupancyRepository extends JpaRepository<SeatOccupancy, Lo
 
     boolean existsByMember_Id(Long memberId);
 
+    Optional<SeatOccupancy> findByMember_Id(Long memberId);
+
     boolean existsByStudyChannel_IdAndSeat_Id(Long studyChannelId, Long seatId);
 
     Optional<SeatOccupancy> findByStudySession_IdAndMember_Id(Long studySessionId, Long memberId);
 
     Optional<SeatOccupancy> findByStudySession_Id(Long studySessionId);
+
 
     /** 재접속 제한이 지난 점유의 세션 ID(스케줄러 자동 퇴실 후보). */
     @Query("select o.studySession.id from SeatOccupancy o where o.reconnectDeadlineAt < :threshold")
