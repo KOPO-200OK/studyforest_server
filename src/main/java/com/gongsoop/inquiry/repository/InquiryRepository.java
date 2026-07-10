@@ -12,6 +12,8 @@ public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
 
     Page<Inquiry> findByMember(Member member, Pageable pageable);
 
+    Page<Inquiry> findByIsSecretFalse(Pageable pageable);
+
     @Query("SELECT i FROM Inquiry i WHERE (:keyword IS NULL OR i.title LIKE :keyword OR i.content LIKE :keyword)")
     Page<Inquiry> searchForAdmin(@Param("keyword") String keyword, Pageable pageable);
 }

@@ -21,6 +21,14 @@ public class InquiryController {
         this.inquiryService = inquiryService;
     }
 
+    @GetMapping("/public")
+    public ApiResponse<PageResponse<InquirySummaryResponse>> getPublicInquiries(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ApiResponse.success("공개 문의 목록을 조회했습니다", inquiryService.getPublicInquiries(page, size));
+    }
+
     @GetMapping
     public ApiResponse<PageResponse<InquirySummaryResponse>> getMyInquiries(
             @AuthenticationPrincipal String email,
