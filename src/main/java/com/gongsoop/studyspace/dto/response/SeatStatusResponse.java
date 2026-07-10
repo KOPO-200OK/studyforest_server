@@ -6,9 +6,11 @@ public record SeatStatusResponse(
         Long seatId,
         Integer seatNo,
         boolean active,
-        boolean occupied
+        boolean occupied,
+        Integer characterId
 ) {
-    public static SeatStatusResponse of(Seat seat, boolean occupied) {
-        return new SeatStatusResponse(seat.getId(), seat.getSeatNo(), seat.isActive(), occupied);
+    public static SeatStatusResponse of(Seat seat, Integer characterId) {
+        return new SeatStatusResponse(
+                seat.getId(), seat.getSeatNo(), seat.isActive(), characterId != null, characterId);
     }
 }

@@ -32,6 +32,9 @@ public class Member {
     @Column(name = "IS_DELETED", nullable = false)
     private boolean isDeleted;
 
+    @Column(name = "CHARACTER_ID", nullable = false)
+    private Integer characterId;
+
     protected Member() {
     }
 
@@ -42,6 +45,7 @@ public class Member {
         this.password = password;
         this.userRole = MemberRole.USER;
         this.isDeleted = false;
+        this.characterId = 1;
     }
 
     public Long getId() {
@@ -70,6 +74,14 @@ public class Member {
 
     public boolean isDeleted() {
         return isDeleted;
+    }
+
+    public Integer getCharacterId() {
+        return characterId;
+    }
+
+    public void updateCharacter(Integer characterId) {
+        this.characterId = characterId;
     }
 
     public void delete() {

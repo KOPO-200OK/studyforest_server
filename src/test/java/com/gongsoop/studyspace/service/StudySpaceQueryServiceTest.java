@@ -1,6 +1,7 @@
 package com.gongsoop.studyspace.service;
 
 import com.gongsoop.global.exception.BusinessException;
+import com.gongsoop.member.entity.Member;
 import com.gongsoop.studyspace.dto.response.SeatStatusResponse;
 import com.gongsoop.studyspace.entity.Seat;
 import com.gongsoop.studyspace.entity.SeatOccupancy;
@@ -50,6 +51,7 @@ class StudySpaceQueryServiceTest {
         Seat occupiedSeat = mock(Seat.class);
         Seat availableSeat = mock(Seat.class);
         SeatOccupancy occupancy = mock(SeatOccupancy.class);
+        Member occupant = mock(Member.class);
 
         when(room.getId()).thenReturn(1L);
         when(room.isActive()).thenReturn(true);
@@ -62,6 +64,8 @@ class StudySpaceQueryServiceTest {
         when(availableSeat.getSeatNo()).thenReturn(2);
         when(availableSeat.isActive()).thenReturn(true);
         when(occupancy.getSeat()).thenReturn(occupiedSeat);
+        when(occupancy.getMember()).thenReturn(occupant);
+        when(occupant.getCharacterId()).thenReturn(3);
         when(studyChannelRepository.findById(3L)).thenReturn(Optional.of(channel));
         when(seatOccupancyRepository.findAllByStudyChannel_Id(3L)).thenReturn(List.of(occupancy));
         when(seatRepository.findAllByStudyRoom_IdOrderBySeatNoAsc(1L))
@@ -71,7 +75,9 @@ class StudySpaceQueryServiceTest {
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).occupied()).isTrue();
+        assertThat(result.get(0).characterId()).isEqualTo(3);
         assertThat(result.get(1).occupied()).isFalse();
+        assertThat(result.get(1).characterId()).isNull();
     }
 
     @Test

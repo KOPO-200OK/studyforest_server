@@ -7,6 +7,8 @@ import com.gongsoop.member.dto.request.FindEmailRequest;
 import com.gongsoop.member.dto.request.LoginRequest;
 import com.gongsoop.member.dto.request.ResetPasswordRequest;
 import com.gongsoop.member.dto.request.SignupRequest;
+import com.gongsoop.member.dto.request.UpdateCharacterRequest;
+import com.gongsoop.member.dto.response.CharacterResponse;
 import com.gongsoop.member.dto.response.LoginResponse;
 import com.gongsoop.member.dto.response.MemberResponse;
 import com.gongsoop.member.entity.Member;
@@ -51,6 +53,15 @@ public class MemberService {
                 .filter(m -> !m.isDeleted())
                 .orElseThrow(() -> new BusinessException("MEMBER_NOT_FOUND", "회원 정보를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
         member.delete();
+    }
+
+    public CharacterResponse updateCharacter(String email, UpdateCharacterRequest request) {
+        Member member = memberRepository.findByEmail(email)
+                .filter(m -> !m.isDeleted())
+                .orElseThrow(() -> new BusinessException(
+                        "MEMBER_NOT_FOUND", "회원 정보를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
+        member.updateCharacter(request.characterId());
+        return new CharacterResponse(member.getCharacterId());
     }
 
     public void resetPassword(ResetPasswordRequest request) {

@@ -9,7 +9,8 @@ public record MemberResponse(
         String name,
         LocalDate birthdate,
         String email,
-        String userRole
+        String userRole,
+        Integer characterId
 ) {
     public static MemberResponse from(Member member) {
         return new MemberResponse(
@@ -17,7 +18,8 @@ public record MemberResponse(
                 member.getName(),
                 member.getBirthdate(),
                 member.getEmail(),
-                member.getUserRole().name()
+                member.getUserRole().name(),
+                member.getCharacterId()
         );
     }
 }
