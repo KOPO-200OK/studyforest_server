@@ -5,6 +5,29 @@ spring:
     name: studyforest-server
   jackson:
     default-property-inclusion: non_null
+
+  datasource:
+    hikari:
+      pool-name: StudyForestHikariPool
+
+      # Oracle 커넥션 과점유 방지
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:5}
+      minimum-idle: ${DB_POOL_MIN_IDLE:1}
+
+      # 풀 대기 / 유휴 / 수명 설정
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:10000}
+      validation-timeout: ${DB_VALIDATION_TIMEOUT_MS:5000}
+      idle-timeout: ${DB_IDLE_TIMEOUT_MS:300000}
+      max-lifetime: ${DB_MAX_LIFETIME_MS:1740000}
+      keepalive-time: ${DB_KEEPALIVE_TIME_MS:120000}
+
+      # 커넥션 누수 의심 로그
+      leak-detection-threshold: ${DB_LEAK_DETECTION_MS:60000}
+
+      data-source-properties:
+        oracle.jdbc.defaultConnectionValidation: LOCAL
+        oracle.jdbc.implicitStatementCacheSize: 10
+
   jpa:
     hibernate:
       ddl-auto: none
