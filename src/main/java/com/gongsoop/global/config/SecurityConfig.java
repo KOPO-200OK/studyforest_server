@@ -1,11 +1,10 @@
 package com.gongsoop.global.config;
 
-import org.springframework.http.HttpMethod;
+import com.gongsoop.global.security.AccessTokenValidator;
 import com.gongsoop.global.security.CustomAccessDeniedHandler;
 import com.gongsoop.global.security.CustomAuthenticationEntryPoint;
 import com.gongsoop.global.security.JwtAuthenticationFilter;
-import com.gongsoop.global.security.JwtProvider;
-import com.gongsoop.global.security.TokenService;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -25,19 +24,16 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-    private final JwtProvider jwtProvider;
-    private final TokenService tokenService;
+    private final AccessTokenValidator accessTokenValidator;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
 
     public SecurityConfig(
-            JwtProvider jwtProvider,
-            TokenService tokenService,
+            AccessTokenValidator accessTokenValidator,
             CustomAuthenticationEntryPoint authenticationEntryPoint,
             CustomAccessDeniedHandler accessDeniedHandler
     ) {
-        this.jwtProvider = jwtProvider;
-        this.tokenService = tokenService;
+        this.accessTokenValidator = accessTokenValidator;
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
     }
@@ -100,7 +96,7 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtProvider, tokenService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthenticationFilter(accessTokenValidator), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

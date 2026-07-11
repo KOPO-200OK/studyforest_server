@@ -111,7 +111,7 @@ public class MemberService {
             throw new BusinessException("INVALID_TOKEN", "유효하지 않은 리프레시 토큰입니다", HttpStatus.UNAUTHORIZED);
         }
         String email = claims.getSubject();
-        if (!refreshToken.equals(tokenService.getRefreshToken(email))) {
+        if (!tokenService.matchesRefreshToken(email, refreshToken)) {
             throw new BusinessException("INVALID_TOKEN", "유효하지 않은 리프레시 토큰입니다", HttpStatus.UNAUTHORIZED);
         }
         Member member = memberRepository.findByEmail(email)

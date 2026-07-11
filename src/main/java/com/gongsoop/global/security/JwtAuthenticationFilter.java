@@ -1,6 +1,5 @@
 package com.gongsoop.global.security;
 
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,12 +14,10 @@ import java.util.List;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtProvider jwtProvider;
-    private final TokenService tokenService;
+    private final AccessTokenValidator accessTokenValidator;
 
-    public JwtAuthenticationFilter(JwtProvider jwtProvider, TokenService tokenService) {
-        this.jwtProvider = jwtProvider;
-        this.tokenService = tokenService;
+    public JwtAuthenticationFilter(AccessTokenValidator accessTokenValidator) {
+        this.accessTokenValidator = accessTokenValidator;
     }
 
     @Override
@@ -29,8 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = resolveToken(request);
 
-        if (token != null && jwtProvider.validateToken(token) && !tokenService.isBlacklisted(token)) {
-            Claims claims = jwtProvider.parseToken(token);
+        accessTokenValidator.getUsableClaims(token).ifPresent(claims -> {
             String email = claims.getSubject();
             String role = claims.get("role", String.class);
 
@@ -38,7 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     email, null, List.of(new SimpleGrantedAuthority("ROLE_" + role))
             );
             SecurityContextHolder.getContext().setAuthentication(auth);
-        }
+        });
 
         filterChain.doFilter(request, response);
     }
