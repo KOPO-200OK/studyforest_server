@@ -2,9 +2,9 @@
 
 ## 1. 적용된 도구
 
-- **SpotBugs + FindSecBugs**: 기존에 설정되어 있었음 (`build.gradle`). `effort=max`, `reportLevel=medium`으로 강화하고 HTML 리포트 활성화, `config/spotbugs/exclude.xml` 추가.
-- **OWASP Dependency-Check**: 신규 추가 (`org.owasp.dependencycheck` 플러그인). `config/dependency-check/suppressions.xml` 추가. `CVSS >= 9`면 빌드 실패하도록 설정.
-- 실행: `./gradlew spotbugsMain` / `./gradlew dependencyCheckAnalyze` (리포트는 `build/reports/`)
+- **SpotBugs + FindSecBugs**: `build.gradle`에 플러그인만 있고 `effort`/`reportLevel`/리포트 설정과 `config/spotbugs/exclude.xml`은 실제로는 커밋되어 있지 않았음(2026-07-12 확인). 이번 점검은 `effort=max`, `reportLevel=medium`, HTML/XML 리포트 활성화 설정을 로컬에서 **임시로만** 적용해 실행하고 결과 분석 후 되돌렸다 — 저장소에는 반영되지 않음. 도구 설정을 실제로 커밋할지는 팀 논의 필요(4장 참고).
+- **OWASP Dependency-Check**: 아직 미도입. NVD 데이터베이스 초기 동기화가 네트워크 상황에 따라 오래 걸려 이번 점검 범위에서는 제외 — 별도 작업으로 도입 필요.
+- 재현 방법: `build.gradle`의 `spotbugs` 플러그인 블록에 `effort = 'max'`, `reportLevel = 'medium'`을 추가하고 `./gradlew spotbugsMain` 실행 (리포트는 `build/reports/spotbugs/main.xml`, `main.html`).
 
 ## 2. 미해결 취약점 (조치 필요)
 
@@ -43,6 +43,33 @@
 - JWT 시크릿 하드코딩 없음 (`${JWT_SECRET}` 환경변수, 기본값 없음)
 - AI 서버 클라이언트 — 고정 base-url, 사용자 제어 불가 (SSRF 없음)
 
-## 4. 참고 — 로컬 개발 환경 이슈 (보안과 무관, 참고용)
+## 4. 2026-07-12 추가 점검 — SpotBugs + FindSecBugs 실행 결과 (코드 미수정, 발견 사항만 기록)
+
+`hyunju` 브랜치(오늘/이번 주 학습시간 기능 추가분 포함)를 대상으로 `effort=max`, `reportLevel=medium` 설정으로 `./gradlew spotbugsMain`을 처음 실행. 총 84건 발견 → 코드를 하나씩 대조해 오탐/실제 여부를 판단. **이 점검은 리포트 확인 목적이라 코드·설정 변경은 전부 되돌렸고, 아래는 전부 "아직 조치 안 된" 상태다.**
+
+### 4.1 오탐으로 판단 (조치 불필요)
+
+| 유형 | 건수 | 위치 | 오탐 판단 근거 |
+| --- | --- | --- | --- |
+| `SQL_INJECTION_SPRING_JDBC` | 4 | `AdminService.getMembers/getQuestions`의 동적 `WHERE`절 (95, 105, 321, 331행) | `StringBuilder`로 이어붙이는 것은 `" AND ... = ? "` 같은 정적 SQL 조각뿐이고, `keyword`/`userRole`/`era`/`category`/`isDeleted` 등 실제 사용자 입력은 전부 `?` 바인딩 파라미터(`params.toArray()`)로만 전달됨을 코드로 직접 확인. FindSecBugs가 "동적으로 조립된 SQL 문자열"이라는 형태만 보고 taint로 오인하는 전형적 패턴. |
+| `XSS_SERVLET` | 2 | `CustomAccessDeniedHandler:37`, `CustomAuthenticationEntryPoint:37` | 응답 본문이 `ApiResponse.failure(고정 코드, 고정 메시지)`를 JSON 직렬화한 값뿐이며 요청 파라미터·예외 메시지 등 사용자 입력을 전혀 반영하지 않음. `Content-Type`도 `application/json`. |
+| `EI_EXPOSE_REP` / `EI_EXPOSE_REP2` | 18 + 54 = 72 | 전 모듈(생성자 주입 필드, JPA 엔티티/DTO record의 list·getter 등) | Spring 생성자 주입으로 협력 객체 참조를 저장하는 표준 패턴이거나, 요청마다 새로 만들어 즉시 JSON 직렬화 후 버려지는 응답 객체. 외부 호출자가 내부 가변 상태를 되돌려주고 변조할 경로가 존재하지 않아 전부 오탐. |
+
+### 4.2 실제 문제로 판단 — 조치 필요 (미수정)
+
+- **`CT_CONSTRUCTOR_THROW`(1건)** — `src/main/java/com/gongsoop/global/security/JwtProvider.java:22-24`. 생성자에서 `Keys.hmacShaKeyFor(...)`가 시크릿이 짧으면 예외를 던짐. 생성자에서 예외가 나면 객체가 부분 초기화된 채로 남아 파이널라이저 공격에 노출될 수 있는 이론적 위험. **제안**: 서브클래싱을 막기 위해 클래스에 `final` 추가(비용 거의 없는 수정).
+- **`NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE`(`StudyAnalysisService.getSummary()` 범위 2건)** — `src/main/java/com/gongsoop/study/service/StudyAnalysisService.java:101,106`. `jdbcTemplate.queryForObject(...)`가 이론상 `null`을 반환할 수 있는 시그니처인데 바로 `.totalSolvedCount()`/`.submittedMockExamCount()`를 호출. 실제로는 두 쿼리 모두 집계(COUNT/AVG) 결과라 행이 항상 1건 반환되므로 실질적 NPE 경로는 없지만, 방어적으로 `null` 가드를 추가해두는 편이 안전.
+
+### 4.3 저위험 · 기존 패턴 — 우선순위 낮음
+
+- **`NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE`(나머지 6건)**: `AdminService`, `DashboardService`, `StudySpaceWsController`에 동일 패턴이 이미 있었음(오늘 작업으로 새로 생긴 것 아님). 각 쿼리의 `RowMapper`가 항상 non-null 레코드를 반환하므로 실질적 NPE 경로는 없지만, 방어적 코딩 관점에서는 정리 여지가 있음.
+- **`BX_UNBOXING_IMMEDIATELY_REBOXED`(5건)**: `x == null ? 0L : x` 형태의 null 가드 관용구가 `AdminService`/`DashboardService`/`StudyAnalysisService`에 반복 사용됨. 동작에는 문제 없고 성능 영향도 무시 가능한 수준 — 스타일 통일 차원의 이슈.
+- **`VA_FORMAT_STRING_USES_NEWLINE`(1건)**: `AiService.buildSessionPrompt`에서 `String.format`에 `%n` 대신 `\n` 사용. 이식성 관련 스타일 이슈, 보안과 무관.
+
+### 4.4 참고 — 도구 설정을 저장소에 반영하려면
+
+이번 점검에서 쓴 `effort=max`/`reportLevel=medium`/HTML 리포트 설정과 오탐 억제용 `config/spotbugs/exclude.xml`은 로컬 실행 후 되돌려서 저장소에는 없다. 팀에서 SpotBugs를 상시 도구로 쓰기로 하면, 4.1의 오탐 근거를 그대로 `exclude.xml`에 옮기고 4.2/4.3을 이슈로 등록해 트래킹하는 것을 권장.
+
+## 5. 참고 — 로컬 개발 환경 이슈 (보안과 무관, 참고용)
 
 로컬에서 `cloud` 프로필로 Oracle Autonomous DB(지갑 기반 TCPS)에 연결할 때 `PKIX path building failed` 오류가 발생하면, JDK의 신뢰 인증서 문제가 아니라 **Avast 등 TLS 검사(SSL scanning) 기능이 있는 백신 프로그램이 인증서를 가로채고 있을 가능성**이 큽니다. 해당 백신에서 `java.exe`를 예외 처리하거나 HTTPS 검사를 끄면 해결됩니다.

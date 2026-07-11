@@ -7,6 +7,8 @@ public record StudySummaryResponse(
         Double accuracyRate,
         Long unresolvedWrongCount,
         Long submittedMockExamCount,
-        Double averageMockExamScore
+        Double averageMockExamScore,
+        Long todayStudySeconds,
+        Long weeklyStudySeconds
 ) {
 }
