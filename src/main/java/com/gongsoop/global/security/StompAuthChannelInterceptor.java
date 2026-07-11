@@ -22,10 +22,10 @@ import java.util.List;
 @Component
 public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
-    private final JwtProvider jwtProvider;
+    private final AccessTokenValidator accessTokenValidator;
 
-    public StompAuthChannelInterceptor(JwtProvider jwtProvider) {
-        this.jwtProvider = jwtProvider;
+    public StompAuthChannelInterceptor(AccessTokenValidator accessTokenValidator) {
+        this.accessTokenValidator = accessTokenValidator;
     }
 
     @Override
@@ -38,11 +38,8 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         }
 
         String token = resolveToken(accessor.getFirstNativeHeader("Authorization"));
-        if (token == null || !jwtProvider.validateToken(token)) {
-            throw new IllegalArgumentException("STOMP 연결 인증에 실패했습니다");
-        }
-
-        Claims claims = jwtProvider.parseToken(token);
+        Claims claims = accessTokenValidator.getUsableClaims(token)
+                .orElseThrow(() -> new IllegalArgumentException("STOMP 연결 인증에 실패했습니다"));
         String email = claims.getSubject();
         String role = claims.get("role", String.class);
 
