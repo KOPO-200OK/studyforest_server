@@ -7,6 +7,7 @@ import com.gongsoop.studyspace.config.StudySpaceRealtimeProperties;
 import com.gongsoop.studyspace.dto.request.OccupySeatRequest;
 import com.gongsoop.studyspace.dto.response.SessionTickResponse;
 import com.gongsoop.studyspace.dto.response.StudySessionResponse;
+import com.gongsoop.studyspace.dto.response.StudyTimeSummaryResponse;
 import com.gongsoop.studyspace.entity.*;
 import com.gongsoop.studyspace.realtime.SeatChangedEvent;
 import com.gongsoop.studyspace.realtime.SeatEventMessage;
@@ -21,7 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Optional;
 
 @Service
@@ -244,6 +248,36 @@ public class StudySessionService {
         presenceService.clearPresence(studySessionId);
         publish(SeatEventMessage.Type.DISCONNECTED, occupancy.getStudyChannel().getId(),
                 occupancy.getSeat(), occupancy.getMember(), session, now);
+    }
+
+    /**
+     * 회원의 오늘/이번 주(월요일 시작) 누적 학습 시간(초). "이번 주" 통계는 매주 월요일
+     * 초기화되므로 주 시작을 항상 월요일로 고정한다. RUNNING 세션은 마지막 재개 이후
+     * 아직 DB에 반영되지 않은 진행분을 더해 화면에 실시간에 가깝게 보여준다.
+     */
+    @Transactional(readOnly = true)
+    public StudyTimeSummaryResponse getStudyTimeSummary(Long memberId) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        LocalDate today = now.toLocalDate();
+        LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+
+        long todaySeconds = studySessionRepository
+                .sumAccumulatedSecondsByMemberAndDateRange(memberId, today, today);
+        long weeklySeconds = studySessionRepository
+                .sumAccumulatedSecondsByMemberAndDateRange(memberId, weekStart, today);
+
+        long liveExtraSeconds = studySessionRepository
+                .findByMember_IdAndStatus(memberId, StudySessionStatus.RUNNING)
+                .map(session -> {
+                    long accumulated = session.getAccumulatedSeconds() == null ? 0L : session.getAccumulatedSeconds();
+                    return Math.max(0L, session.elapsedSeconds(now) - accumulated);
+                })
+                .orElse(0L);
+
+        return new StudyTimeSummaryResponse(
+                todaySeconds + liveExtraSeconds,
+                weeklySeconds + liveExtraSeconds
+        );
     }
 
     /** WS join 매핑 전에 해당 세션의 소유자인지 확인한다(타인 세션 매핑·오염 방지). */

@@ -74,3 +74,6 @@ studyspace:
     startup-grace: 30s
     # 유지보수 스케줄러 실행 주기.
     sweep-interval: 30s
+  retention:
+    # 지난 주 종료 세션 정리 스케줄. "이번 주" 학습시간 통계 초기화(매주 월요일)에 맞춘다.
+    cleanup-cron: "0 30 3 * * MON"

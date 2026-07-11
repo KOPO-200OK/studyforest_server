@@ -6,6 +6,8 @@ import com.gongsoop.member.repository.MemberRepository;
 import com.gongsoop.study.dto.response.StudySummaryResponse;
 import com.gongsoop.study.dto.response.WeaknessAnalysisResponse;
 import com.gongsoop.study.dto.response.WeaknessItemResponse;
+import com.gongsoop.studyspace.dto.response.StudyTimeSummaryResponse;
+import com.gongsoop.studyspace.service.StudySessionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -21,10 +23,16 @@ public class StudyAnalysisService {
 
     private final JdbcTemplate jdbcTemplate;
     private final MemberRepository memberRepository;
+    private final StudySessionService studySessionService;
 
-    public StudyAnalysisService(JdbcTemplate jdbcTemplate, MemberRepository memberRepository) {
+    public StudyAnalysisService(
+            JdbcTemplate jdbcTemplate,
+            MemberRepository memberRepository,
+            StudySessionService studySessionService
+    ) {
         this.jdbcTemplate = jdbcTemplate;
         this.memberRepository = memberRepository;
+        this.studySessionService = studySessionService;
     }
 
     public StudySummaryResponse getSummary(String email) {
@@ -53,7 +61,9 @@ public class StudyAnalysisService {
                         getDouble(rs, "ACCURACY_RATE"),
                         0L,
                         0L,
-                        0.0
+                        0.0,
+                        0L,
+                        0L
                 ),
                 memberId
         );
@@ -85,6 +95,8 @@ public class StudyAnalysisService {
                 memberId
         );
 
+        StudyTimeSummaryResponse studyTimeSummary = studySessionService.getStudyTimeSummary(memberId);
+
         return new StudySummaryResponse(
                 baseSummary.totalSolvedCount(),
                 baseSummary.correctCount(),
@@ -92,7 +104,9 @@ public class StudyAnalysisService {
                 baseSummary.accuracyRate(),
                 unresolvedWrongCount == null ? 0L : unresolvedWrongCount,
                 mockExamStats.submittedMockExamCount(),
-                mockExamStats.averageMockExamScore()
+                mockExamStats.averageMockExamScore(),
+                studyTimeSummary.todayStudySeconds(),
+                studyTimeSummary.weeklyStudySeconds()
         );
     }
 
