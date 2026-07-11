@@ -12,6 +12,14 @@ import java.util.Optional;
 public interface SeatOccupancyRepository extends JpaRepository<SeatOccupancy, Long> {
     List<SeatOccupancy> findAllByStudyChannel_Id(Long studyChannelId);
 
+    @Query("select o from SeatOccupancy o "
+            + "join fetch o.member "
+            + "join fetch o.studySession "
+            + "where o.studyChannel.id = :studyChannelId "
+            + "and o.disconnectedAt is null "
+            + "order by o.occupiedAt asc")
+    List<SeatOccupancy> findConnectedParticipants(@Param("studyChannelId") Long studyChannelId);
+
     boolean existsByMember_Id(Long memberId);
 
     Optional<SeatOccupancy> findByMember_Id(Long memberId);

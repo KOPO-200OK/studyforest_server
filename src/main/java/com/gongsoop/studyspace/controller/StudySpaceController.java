@@ -3,6 +3,7 @@ package com.gongsoop.studyspace.controller;
 import com.gongsoop.global.response.ApiResponse;
 import com.gongsoop.studyspace.dto.request.OccupySeatRequest;
 import com.gongsoop.studyspace.dto.response.SeatStatusResponse;
+import com.gongsoop.studyspace.dto.response.ActiveParticipantResponse;
 import com.gongsoop.studyspace.dto.response.SessionTickResponse;
 import com.gongsoop.studyspace.dto.response.StudyChannelResponse;
 import com.gongsoop.studyspace.dto.response.StudyRoomResponse;
@@ -51,6 +52,16 @@ public class StudySpaceController {
         return ApiResponse.success(
                 "채널 좌석 현황을 조회했습니다",
                 studySpaceQueryService.getSeatStatuses(studyChannelId)
+        );
+    }
+
+    @GetMapping("/study-channels/{studyChannelId}/participants")
+    public ApiResponse<List<ActiveParticipantResponse>> getActiveParticipants(
+            @PathVariable Long studyChannelId
+    ) {
+        return ApiResponse.success(
+                "채널 접속자 목록을 조회했습니다",
+                studySpaceQueryService.getActiveParticipants(studyChannelId)
         );
     }
 
