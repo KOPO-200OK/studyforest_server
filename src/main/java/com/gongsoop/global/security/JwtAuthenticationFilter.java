@@ -16,9 +16,11 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
+    private final TokenService tokenService;
 
-    public JwtAuthenticationFilter(JwtProvider jwtProvider) {
+    public JwtAuthenticationFilter(JwtProvider jwtProvider, TokenService tokenService) {
         this.jwtProvider = jwtProvider;
+        this.tokenService = tokenService;
     }
 
     @Override
@@ -27,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = resolveToken(request);
 
-        if (token != null && jwtProvider.validateToken(token)) {
+        if (token != null && jwtProvider.validateToken(token) && !tokenService.isBlacklisted(token)) {
             Claims claims = jwtProvider.parseToken(token);
             String email = claims.getSubject();
             String role = claims.get("role", String.class);

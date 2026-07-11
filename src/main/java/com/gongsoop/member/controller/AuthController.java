@@ -3,13 +3,16 @@ package com.gongsoop.member.controller;
 import com.gongsoop.global.response.ApiResponse;
 import com.gongsoop.member.dto.request.FindEmailRequest;
 import com.gongsoop.member.dto.request.LoginRequest;
+import com.gongsoop.member.dto.request.RefreshTokenRequest;
 import com.gongsoop.member.dto.request.ResetPasswordRequest;
 import com.gongsoop.member.dto.request.SignupRequest;
 import com.gongsoop.member.dto.response.LoginResponse;
 import com.gongsoop.member.service.MemberService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -45,5 +48,29 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         memberService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success("비밀번호가 재설정되었습니다"));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @AuthenticationPrincipal String email,
+            HttpServletRequest request
+    ) {
+        String token = resolveToken(request);
+        memberService.logout(email, token);
+        return ResponseEntity.ok(ApiResponse.success("로그아웃이 완료되었습니다"));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<String>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        String newAccessToken = memberService.refresh(request.refreshToken());
+        return ResponseEntity.ok(ApiResponse.success("액세스 토큰이 갱신되었습니다", newAccessToken));
+    }
+
+    private String resolveToken(HttpServletRequest request) {
+        String bearer = request.getHeader("Authorization");
+        if (bearer != null && bearer.startsWith("Bearer ")) {
+            return bearer.substring(7);
+        }
+        return null;
     }
 }
