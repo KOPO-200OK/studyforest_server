@@ -14,7 +14,8 @@ import java.util.Date;
 @Component
 public class JwtProvider {
 
-    private static final long EXPIRATION_MS = 6 * 60 * 60 * 1000L; // 6시간
+    private static final long ACCESS_TOKEN_EXPIRATION_MS = 30 * 60 * 1000L;           // 30분
+    private static final long REFRESH_TOKEN_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000L; // 7일
 
     private final SecretKey secretKey;
 
@@ -22,15 +23,33 @@ public class JwtProvider {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createToken(String email, String role) {
+    public String createAccessToken(String email, String role) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)
+                .claim("type", "access")
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + EXPIRATION_MS))
+                .expiration(new Date(now.getTime() + ACCESS_TOKEN_EXPIRATION_MS))
                 .signWith(secretKey)
                 .compact();
+    }
+
+    public String createRefreshToken(String email) {
+        Date now = new Date();
+        return Jwts.builder()
+                .subject(email)
+                .claim("type", "refresh")
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + REFRESH_TOKEN_EXPIRATION_MS))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public long getRemainingTimeMs(String token) {
+        Date expiration = parseToken(token).getExpiration();
+        long remaining = expiration.getTime() - System.currentTimeMillis();
+        return Math.max(remaining, 0);
     }
 
     public Claims parseToken(String token) {
