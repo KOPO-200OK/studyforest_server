@@ -7,11 +7,18 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record AdminQuestionUpdateRequest(
+
         @NotBlank(message = "문제 내용을 입력해주세요")
-        @Size(max = 4000, message = "문제 내용은 4000자 이하로 입력해주세요")
+        @Size(
+                max = 4000,
+                message = "문제 내용은 4000자 이하로 입력해주세요"
+        )
         String questionText,
 
-        @Size(max = 4000, message = "제시문은 4000자 이하로 입력해주세요")
+        @Size(
+                max = 4000,
+                message = "제시문은 4000자 이하로 입력해주세요"
+        )
         String passage,
 
         @NotNull(message = "배점을 입력해주세요")
@@ -20,18 +27,38 @@ public record AdminQuestionUpdateRequest(
         Integer point,
 
         @NotBlank(message = "1번 보기를 입력해주세요")
+        @Size(
+                max = 2000,
+                message = "1번 보기는 2000자 이하로 입력해주세요"
+        )
         String choice1,
 
         @NotBlank(message = "2번 보기를 입력해주세요")
+        @Size(
+                max = 2000,
+                message = "2번 보기는 2000자 이하로 입력해주세요"
+        )
         String choice2,
 
         @NotBlank(message = "3번 보기를 입력해주세요")
+        @Size(
+                max = 2000,
+                message = "3번 보기는 2000자 이하로 입력해주세요"
+        )
         String choice3,
 
         @NotBlank(message = "4번 보기를 입력해주세요")
+        @Size(
+                max = 2000,
+                message = "4번 보기는 2000자 이하로 입력해주세요"
+        )
         String choice4,
 
         @NotBlank(message = "5번 보기를 입력해주세요")
+        @Size(
+                max = 2000,
+                message = "5번 보기는 2000자 이하로 입력해주세요"
+        )
         String choice5,
 
         @NotNull(message = "정답을 입력해주세요")
@@ -39,10 +66,16 @@ public record AdminQuestionUpdateRequest(
         @Max(value = 5, message = "정답은 5번 이하여야 합니다")
         Integer answer,
 
-        @Size(max = 100, message = "시대는 100자 이하로 입력해주세요")
+        @Size(
+                max = 100,
+                message = "시대는 100자 이하로 입력해주세요"
+        )
         String era,
 
-        @Size(max = 100, message = "분류는 100자 이하로 입력해주세요")
+        @Size(
+                max = 100,
+                message = "분류는 100자 이하로 입력해주세요"
+        )
         String category,
 
         @NotNull(message = "삭제 여부를 입력해주세요")

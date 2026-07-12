@@ -260,6 +260,35 @@ public class QuestionBankService {
     }
 
     /**
+     * 로그인한 사용자의 오답노트 한 건을 조회합니다.
+     *
+     * 다른 사용자의 오답노트에는 접근할 수 없도록
+     * memberId와 wrongAnswerId를 함께 확인합니다.
+     */
+    public WrongAnswerSummaryResponse getWrongAnswer(
+            String email,
+            Long wrongAnswerId
+    ) {
+        Long memberId = getCurrentMemberId(email);
+
+        HistWrongAnswer wrongAnswer =
+                histWrongAnswerRepository
+                        .findByWrongAnswerIdAndMemberId(
+                                wrongAnswerId,
+                                memberId
+                        )
+                        .orElseThrow(() ->
+                                new BusinessException(
+                                        "WRONG_ANSWER_NOT_FOUND",
+                                        "오답노트를 찾을 수 없습니다",
+                                        HttpStatus.NOT_FOUND
+                                )
+                        );
+
+        return toWrongAnswerSummary(wrongAnswer);
+    }
+
+    /**
      * 오답노트 문제를 다시 채점합니다.
      */
     @Transactional

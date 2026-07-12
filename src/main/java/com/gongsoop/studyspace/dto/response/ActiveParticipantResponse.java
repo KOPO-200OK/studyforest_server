@@ -11,12 +11,20 @@ public record ActiveParticipantResponse(
         long elapsedSeconds,
         boolean running
 ) {
-    public static ActiveParticipantResponse from(SeatOccupancy occupancy, LocalDateTime now) {
+    public static ActiveParticipantResponse from(
+            SeatOccupancy occupancy,
+            LocalDateTime now
+    ) {
         return new ActiveParticipantResponse(
                 occupancy.getMember().getId(),
-                occupancy.getMember().getName(),
-                occupancy.getStudySession().elapsedSeconds(now),
-                occupancy.getStudySession().getStatus() == StudySessionStatus.RUNNING
+                occupancy.getMember().getNickname(),
+                occupancy
+                        .getStudySession()
+                        .elapsedSeconds(now),
+                occupancy
+                        .getStudySession()
+                        .getStatus()
+                        == StudySessionStatus.RUNNING
         );
     }
 }
