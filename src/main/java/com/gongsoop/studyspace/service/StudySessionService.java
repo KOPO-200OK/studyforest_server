@@ -6,6 +6,7 @@ import com.gongsoop.member.repository.MemberRepository;
 import com.gongsoop.studyspace.config.StudySpaceRealtimeProperties;
 import com.gongsoop.studyspace.dto.request.OccupySeatRequest;
 import com.gongsoop.studyspace.dto.response.SessionTickResponse;
+import com.gongsoop.studyspace.dto.response.ActiveStudySessionResponse;
 import com.gongsoop.studyspace.dto.response.StudySessionResponse;
 import com.gongsoop.studyspace.dto.response.StudyTimeSummaryResponse;
 import com.gongsoop.studyspace.entity.*;
@@ -137,11 +138,19 @@ public class StudySessionService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public Optional<ActiveStudySessionResponse> getActiveSession(String email) {
+        Member member = getCurrentMember(email);
+        LocalDateTime now = LocalDateTime.now(clock);
+        return seatOccupancyRepository.findByMember_Id(member.getId())
+                .map(occupancy -> ActiveStudySessionResponse.from(occupancy, now));
+    }
+
     @Transactional
     public StudySessionResponse leaveSeat(Long studySessionId, String email) {
         Member member = getCurrentMember(email);
         SeatOccupancy occupancy = seatOccupancyRepository
-                .findByStudySession_IdAndMember_Id(studySessionId, member.getId())
+                .findOwnedByStudySessionIdForUpdate(studySessionId, member.getId())
                 .orElseThrow(() -> new BusinessException(
                         "ACTIVE_OCCUPANCY_NOT_FOUND", "현재 이용 중인 좌석을 찾을 수 없습니다", HttpStatus.NOT_FOUND));
 
@@ -163,7 +172,7 @@ public class StudySessionService {
     public SessionTickResponse heartbeat(Long studySessionId, String email) {
         Member member = getCurrentMember(email);
         SeatOccupancy occupancy = seatOccupancyRepository
-                .findByStudySession_IdAndMember_Id(studySessionId, member.getId())
+                .findOwnedByStudySessionIdForUpdate(studySessionId, member.getId())
                 .orElseThrow(() -> new BusinessException(
                         "ACTIVE_OCCUPANCY_NOT_FOUND", "현재 이용 중인 좌석을 찾을 수 없습니다", HttpStatus.NOT_FOUND));
 
@@ -229,7 +238,7 @@ public class StudySessionService {
     /** WS 종료 이벤트/스케줄러가 호출하는 시스템 경로. 이미 DISCONNECTED/종료면 no-op. */
     @Transactional
     public void handleDisconnect(Long studySessionId) {
-        SeatOccupancy occupancy = seatOccupancyRepository.findByStudySession_Id(studySessionId)
+        SeatOccupancy occupancy = seatOccupancyRepository.findByStudySessionIdForUpdate(studySessionId)
                 .orElse(null);
         if (occupancy == null) {
             return;
@@ -340,7 +349,7 @@ public class StudySessionService {
     private SeatOccupancy requireOwnedOccupancy(Long studySessionId, String email) {
         Member member = getCurrentMember(email);
         return seatOccupancyRepository
-                .findByStudySession_IdAndMember_Id(studySessionId, member.getId())
+                .findOwnedByStudySessionIdForUpdate(studySessionId, member.getId())
                 .orElseThrow(() -> new BusinessException(
                         "ACTIVE_OCCUPANCY_NOT_FOUND", "현재 이용 중인 좌석을 찾을 수 없습니다", HttpStatus.NOT_FOUND));
     }

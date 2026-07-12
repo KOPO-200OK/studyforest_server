@@ -103,7 +103,7 @@ class StudySessionServiceRealtimeTest {
     void heartbeatWithinThrottleWindowSkipsDbTouchButRefreshesPresence() {
         StudySession session = session(StudySessionStatus.RUNNING);
         SeatOccupancy occupancy = occupancyFor(session, NOW.minusMinutes(1));
-        when(occupancyRepository.findByStudySession_IdAndMember_Id(30L, 7L))
+        when(occupancyRepository.findOwnedByStudySessionIdForUpdate(30L, 7L))
                 .thenReturn(Optional.of(occupancy));
         when(presenceService.tryMarkDbTouched(30L)).thenReturn(false); // 스로틀 미통과
 
@@ -119,7 +119,7 @@ class StudySessionServiceRealtimeTest {
     void heartbeatPastThrottleWindowTouchesDb() {
         StudySession session = session(StudySessionStatus.RUNNING);
         SeatOccupancy occupancy = occupancyFor(session, NOW.minusMinutes(1));
-        when(occupancyRepository.findByStudySession_IdAndMember_Id(30L, 7L))
+        when(occupancyRepository.findOwnedByStudySessionIdForUpdate(30L, 7L))
                 .thenReturn(Optional.of(occupancy));
         when(presenceService.tryMarkDbTouched(30L)).thenReturn(true); // 스로틀 통과
 
@@ -135,7 +135,7 @@ class StudySessionServiceRealtimeTest {
         session.disconnect(NOW.minusMinutes(5));               // DISCONNECTED로 만든다
         SeatOccupancy occupancy = occupancyFor(session, NOW.minusMinutes(5));
         occupancy.markDisconnected(NOW.minusMinutes(5), NOW.plusMinutes(5));
-        when(occupancyRepository.findByStudySession_IdAndMember_Id(30L, 7L))
+        when(occupancyRepository.findOwnedByStudySessionIdForUpdate(30L, 7L))
                 .thenReturn(Optional.of(occupancy));
 
         service.heartbeat(30L, "user@test.com");
@@ -148,7 +148,7 @@ class StudySessionServiceRealtimeTest {
 
     @Test
     void heartbeatRejectsNonOwner() {
-        when(occupancyRepository.findByStudySession_IdAndMember_Id(30L, 7L))
+        when(occupancyRepository.findOwnedByStudySessionIdForUpdate(30L, 7L))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.heartbeat(30L, "user@test.com"))
@@ -162,7 +162,7 @@ class StudySessionServiceRealtimeTest {
     void handleDisconnectMarksDisconnectedAndOpensReconnectWindow() {
         StudySession session = session(StudySessionStatus.RUNNING);
         SeatOccupancy occupancy = occupancyFor(session, NOW.minusSeconds(30));
-        when(occupancyRepository.findByStudySession_Id(30L)).thenReturn(Optional.of(occupancy));
+        when(occupancyRepository.findByStudySessionIdForUpdate(30L)).thenReturn(Optional.of(occupancy));
 
         service.handleDisconnect(30L);
 
@@ -180,7 +180,7 @@ class StudySessionServiceRealtimeTest {
         StudySession session = session(StudySessionStatus.RUNNING);
         session.disconnect(NOW.minusMinutes(2));
         SeatOccupancy occupancy = occupancyFor(session, NOW.minusMinutes(2));
-        when(occupancyRepository.findByStudySession_Id(30L)).thenReturn(Optional.of(occupancy));
+        when(occupancyRepository.findByStudySessionIdForUpdate(30L)).thenReturn(Optional.of(occupancy));
 
         service.handleDisconnect(30L);
 
@@ -190,7 +190,7 @@ class StudySessionServiceRealtimeTest {
 
     @Test
     void handleDisconnectWithoutOccupancyIsNoOp() {
-        when(occupancyRepository.findByStudySession_Id(30L)).thenReturn(Optional.empty());
+        when(occupancyRepository.findByStudySessionIdForUpdate(30L)).thenReturn(Optional.empty());
 
         service.handleDisconnect(30L);
 
@@ -249,7 +249,7 @@ class StudySessionServiceRealtimeTest {
     void pauseSetsDeadlineRefreshesPresenceTouchesAndBroadcasts() {
         StudySession session = session(StudySessionStatus.RUNNING);
         SeatOccupancy occupancy = occupancyFor(session, NOW.minusMinutes(2));
-        when(occupancyRepository.findByStudySession_IdAndMember_Id(30L, 7L))
+        when(occupancyRepository.findOwnedByStudySessionIdForUpdate(30L, 7L))
                 .thenReturn(Optional.of(occupancy));
 
         SessionTickResponse tick = service.pause(30L, "user@test.com");
@@ -268,7 +268,7 @@ class StudySessionServiceRealtimeTest {
         StudySession session = session(StudySessionStatus.RUNNING);
         session.pause(NOW.minusMinutes(3), NOW.plusHours(1));
         SeatOccupancy occupancy = occupancyFor(session, NOW.minusMinutes(2));
-        when(occupancyRepository.findByStudySession_IdAndMember_Id(30L, 7L))
+        when(occupancyRepository.findOwnedByStudySessionIdForUpdate(30L, 7L))
                 .thenReturn(Optional.of(occupancy));
 
         service.resume(30L, "user@test.com");
@@ -284,7 +284,7 @@ class StudySessionServiceRealtimeTest {
         StudySession session = session(StudySessionStatus.RUNNING);
         session.pause(NOW.minusMinutes(5), NOW.plusHours(1)); // 이미 PAUSED
         SeatOccupancy occupancy = occupancyFor(session, NOW.minusMinutes(5));
-        when(occupancyRepository.findByStudySession_IdAndMember_Id(30L, 7L))
+        when(occupancyRepository.findOwnedByStudySessionIdForUpdate(30L, 7L))
                 .thenReturn(Optional.of(occupancy));
 
         service.pause(30L, "user@test.com");
@@ -298,7 +298,7 @@ class StudySessionServiceRealtimeTest {
     void resumeOnRunningIsNoOpAndDoesNotBroadcast() {
         StudySession session = session(StudySessionStatus.RUNNING); // 이미 RUNNING
         SeatOccupancy occupancy = occupancyFor(session, NOW.minusMinutes(5));
-        when(occupancyRepository.findByStudySession_IdAndMember_Id(30L, 7L))
+        when(occupancyRepository.findOwnedByStudySessionIdForUpdate(30L, 7L))
                 .thenReturn(Optional.of(occupancy));
 
         service.resume(30L, "user@test.com");

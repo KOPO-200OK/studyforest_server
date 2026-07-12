@@ -134,7 +134,7 @@ class StudySessionServiceTest {
         SeatOccupancy occupancy = SeatOccupancy.occupy(
                 channel, seat, member, session, LocalDateTime.of(2026, 7, 8, 15, 0));
         when(memberRepository.findByEmail("user@test.com")).thenReturn(Optional.of(member));
-        when(occupancyRepository.findByStudySession_IdAndMember_Id(30L, 7L))
+        when(occupancyRepository.findOwnedByStudySessionIdForUpdate(30L, 7L))
                 .thenReturn(Optional.of(occupancy));
 
         StudySessionResponse response = service.leaveSeat(30L, "user@test.com");
