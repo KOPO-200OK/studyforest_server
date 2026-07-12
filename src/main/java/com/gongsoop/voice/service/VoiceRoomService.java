@@ -89,7 +89,7 @@ public class VoiceRoomService {
         VoiceParticipantEvent event = VoiceParticipantEvent.joined(
                 studyZoneId,
                 email,
-                member.getName()
+                member.getNickname()
         );
 
         messagingTemplate.convertAndSend(
@@ -113,7 +113,7 @@ public class VoiceRoomService {
         VoiceParticipantEvent event = VoiceParticipantEvent.left(
                 studyZoneId,
                 email,
-                member.getName()
+                member.getNickname()
         );
 
         messagingTemplate.convertAndSend(
@@ -145,7 +145,7 @@ public class VoiceRoomService {
             memberRepository.findByEmail(email)
                     .filter(member -> !member.isDeleted())
                     .ifPresent(member -> result.add(
-                            new VoiceParticipantResponse(member.getEmail(), member.getName())
+                            new VoiceParticipantResponse(member.getEmail(), member.getNickname())
                     ));
         }
 

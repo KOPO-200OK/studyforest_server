@@ -13,39 +13,80 @@ public class Member {
     @Column(name = "USER_ID")
     private Long id;
 
-    @Column(name = "NAME", nullable = false, length = 100)
+    @Column(
+            name = "NAME",
+            nullable = false,
+            length = 100
+    )
     private String name;
 
-    @Column(name = "BIRTHDATE", nullable = false)
+    @Column(
+            name = "NICKNAME",
+            nullable = false,
+            length = 16
+    )
+    private String nickname;
+
+    @Column(
+            name = "BIRTHDATE",
+            nullable = false
+    )
     private LocalDate birthdate;
 
-    @Column(name = "EMAIL", nullable = false, unique = true, length = 255)
+    @Column(
+            name = "EMAIL",
+            nullable = false,
+            unique = true,
+            length = 255
+    )
     private String email;
 
-    @Column(name = "PASSWORD", nullable = false, length = 255)
+    @Column(
+            name = "PASSWORD",
+            nullable = false,
+            length = 255
+    )
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "USER_ROLE", nullable = false, length = 20)
+    @Column(
+            name = "USER_ROLE",
+            nullable = false,
+            length = 20
+    )
     private MemberRole userRole;
 
-    @Column(name = "IS_DELETED", nullable = false)
+    @Column(
+            name = "IS_DELETED",
+            nullable = false
+    )
     private boolean isDeleted;
 
-    @Column(name = "CHARACTER_ID", nullable = false)
+    @Column(
+            name = "CHARACTER_ID",
+            nullable = false
+    )
     private Integer characterId;
 
     protected Member() {
     }
 
-    public Member(String name, LocalDate birthdate, String email, String password) {
+    public Member(
+            String name,
+            String nickname,
+            LocalDate birthdate,
+            String email,
+            String password,
+            Integer characterId
+    ) {
         this.name = name;
+        this.nickname = nickname;
         this.birthdate = birthdate;
         this.email = email;
         this.password = password;
         this.userRole = MemberRole.USER;
         this.isDeleted = false;
-        this.characterId = 1;
+        this.characterId = characterId;
     }
 
     public Long getId() {
@@ -54,6 +95,10 @@ public class Member {
 
     public String getName() {
         return name;
+    }
+
+    public String getNickname() {
+        return nickname;
     }
 
     public LocalDate getBirthdate() {
@@ -80,7 +125,17 @@ public class Member {
         return characterId;
     }
 
-    public void updateCharacter(Integer characterId) {
+    public void updateCharacter(
+            Integer characterId
+    ) {
+        this.characterId = characterId;
+    }
+
+    public void updateProfile(
+            String nickname,
+            Integer characterId
+    ) {
+        this.nickname = nickname;
         this.characterId = characterId;
     }
 
@@ -88,7 +143,9 @@ public class Member {
         this.isDeleted = true;
     }
 
-    public void updatePassword(String encodedPassword) {
+    public void updatePassword(
+            String encodedPassword
+    ) {
         this.password = encodedPassword;
     }
 }
