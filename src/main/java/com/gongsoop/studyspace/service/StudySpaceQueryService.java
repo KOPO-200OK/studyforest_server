@@ -2,6 +2,7 @@ package com.gongsoop.studyspace.service;
 
 import com.gongsoop.global.exception.BusinessException;
 import com.gongsoop.studyspace.dto.response.SeatStatusResponse;
+import com.gongsoop.studyspace.dto.response.ActiveParticipantResponse;
 import com.gongsoop.studyspace.dto.response.StudyChannelResponse;
 import com.gongsoop.studyspace.dto.response.StudyRoomResponse;
 import com.gongsoop.studyspace.entity.SeatOccupancy;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -86,6 +88,22 @@ public class StudySpaceQueryService {
                     Integer characterId = occupancy == null ? null : occupancy.getMember().getCharacterId();
                     return SeatStatusResponse.of(seat, characterId);
                 })
+                .toList();
+    }
+
+    public List<ActiveParticipantResponse> getActiveParticipants(Long studyChannelId) {
+        studyChannelRepository.findById(studyChannelId)
+                .filter(StudyChannel::isActive)
+                .orElseThrow(() -> new BusinessException(
+                        "STUDY_CHANNEL_NOT_FOUND",
+                        "이용 가능한 스터디 채널을 찾을 수 없습니다",
+                        HttpStatus.NOT_FOUND
+                ));
+
+        LocalDateTime now = LocalDateTime.now();
+        return seatOccupancyRepository.findConnectedParticipants(studyChannelId)
+                .stream()
+                .map(occupancy -> ActiveParticipantResponse.from(occupancy, now))
                 .toList();
     }
 

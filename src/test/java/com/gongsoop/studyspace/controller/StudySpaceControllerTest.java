@@ -1,6 +1,7 @@
 package com.gongsoop.studyspace.controller;
 
 import com.gongsoop.studyspace.dto.response.SeatStatusResponse;
+import com.gongsoop.studyspace.dto.response.ActiveParticipantResponse;
 import com.gongsoop.studyspace.dto.response.StudyRoomResponse;
 import com.gongsoop.studyspace.dto.response.StudySessionResponse;
 import com.gongsoop.studyspace.entity.StudySessionStatus;
@@ -61,6 +62,19 @@ class StudySpaceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].occupied").value(true))
                 .andExpect(jsonPath("$.data[1].active").value(false));
+    }
+
+    @Test
+    void returnsActiveParticipantsInChannel() throws Exception {
+        when(studySpaceQueryService.getActiveParticipants(3L))
+                .thenReturn(List.of(new ActiveParticipantResponse(7L, "학습자", 125L, true)));
+
+        mockMvc.perform(get("/api/v1/study-channels/3/participants"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].memberId").value(7))
+                .andExpect(jsonPath("$.data[0].displayName").value("학습자"))
+                .andExpect(jsonPath("$.data[0].elapsedSeconds").value(125))
+                .andExpect(jsonPath("$.data[0].running").value(true));
     }
 
     @Test

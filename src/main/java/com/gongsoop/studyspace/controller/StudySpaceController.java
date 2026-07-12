@@ -3,6 +3,8 @@ package com.gongsoop.studyspace.controller;
 import com.gongsoop.global.response.ApiResponse;
 import com.gongsoop.studyspace.dto.request.OccupySeatRequest;
 import com.gongsoop.studyspace.dto.response.SeatStatusResponse;
+import com.gongsoop.studyspace.dto.response.ActiveParticipantResponse;
+import com.gongsoop.studyspace.dto.response.ActiveStudySessionResponse;
 import com.gongsoop.studyspace.dto.response.SessionTickResponse;
 import com.gongsoop.studyspace.dto.response.StudyChannelResponse;
 import com.gongsoop.studyspace.dto.response.StudyRoomResponse;
@@ -12,6 +14,7 @@ import com.gongsoop.studyspace.service.StudySpaceQueryService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -52,6 +55,25 @@ public class StudySpaceController {
                 "채널 좌석 현황을 조회했습니다",
                 studySpaceQueryService.getSeatStatuses(studyChannelId)
         );
+    }
+
+    @GetMapping("/study-channels/{studyChannelId}/participants")
+    public ApiResponse<List<ActiveParticipantResponse>> getActiveParticipants(
+            @PathVariable Long studyChannelId
+    ) {
+        return ApiResponse.success(
+                "채널 접속자 목록을 조회했습니다",
+                studySpaceQueryService.getActiveParticipants(studyChannelId)
+        );
+    }
+
+    @GetMapping("/study-sessions/me/active")
+    public ResponseEntity<ApiResponse<ActiveStudySessionResponse>> getMyActiveSession(
+            @AuthenticationPrincipal String email
+    ) {
+        return studySessionService.getActiveSession(email)
+                .map(session -> ResponseEntity.ok(ApiResponse.success("활성 학습 세션을 조회했습니다", session)))
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PostMapping("/study-channels/{studyChannelId}/seats/{seatId}/occupancy")
