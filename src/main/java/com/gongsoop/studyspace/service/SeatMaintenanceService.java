@@ -103,7 +103,7 @@ public class SeatMaintenanceService {
                 continue; // 아직 살아 있으면 끊김 아님
             }
             runSafely("presenceStale", sessionId,
-                    () -> studySessionService.handleDisconnect(sessionId));
+                    () -> studySessionService.handleStalePresence(sessionId));
         }
     }
 

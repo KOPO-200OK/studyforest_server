@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
@@ -235,9 +236,23 @@ public class StudySessionService {
                 occupancy.getSeat(), occupancy.getMember(), session, now);
     }
 
-    /** WS 종료 이벤트/스케줄러가 호출하는 시스템 경로. 이미 DISCONNECTED/종료면 no-op. */
+    /** WS 종료 이벤트가 즉시 호출하는 경로. 이미 DISCONNECTED/종료면 no-op. */
     @Transactional
     public void handleDisconnect(Long studySessionId) {
+        disconnect(studySessionId, false);
+    }
+
+    /**
+     * heartbeat 유실을 스케줄러가 뒤늦게 감지한 경로. DB lastSeen은 쓰기 스로틀만큼
+     * 실제 heartbeat보다 늦을 수 있으므로 그 상한을 보정하되, 감지 시점부터 재접속
+     * 10분을 새로 부여하지는 않는다.
+     */
+    @Transactional
+    public void handleStalePresence(Long studySessionId) {
+        disconnect(studySessionId, true);
+    }
+
+    private void disconnect(Long studySessionId, boolean stalePresenceDetected) {
         SeatOccupancy occupancy = seatOccupancyRepository.findByStudySessionIdForUpdate(studySessionId)
                 .orElse(null);
         if (occupancy == null) {
@@ -250,10 +265,30 @@ public class StudySessionService {
 
         LocalDateTime now = LocalDateTime.now(clock);
         LocalDateTime lastSeen = occupancy.getLastSeenAt();
-        session.disconnect(lastSeen != null ? lastSeen : now);
-        occupancy.markDisconnected(now, now.plus(properties.getReconnectWindow()));
+        LocalDateTime disconnectedAt = now;
+        if (stalePresenceDetected && lastSeen != null) {
+            LocalDateTime latestPossibleHeartbeat =
+                    lastSeen.plus(properties.getDbLastSeenThrottle());
+            disconnectedAt = latestPossibleHeartbeat.isAfter(now)
+                    ? now
+                    : latestPossibleHeartbeat;
+        }
+        LocalDateTime reconnectDeadline =
+                disconnectedAt.plus(properties.getReconnectWindow());
 
-        presenceService.startReconnectWindow(studySessionId);
+        session.disconnect(disconnectedAt);
+        occupancy.markDisconnected(disconnectedAt, reconnectDeadline);
+
+        if (stalePresenceDetected) {
+            Duration remaining = Duration.between(now, reconnectDeadline);
+            if (remaining.isNegative() || remaining.isZero()) {
+                presenceService.clearReconnect(studySessionId);
+            } else {
+                presenceService.startReconnectWindow(studySessionId, remaining);
+            }
+        } else {
+            presenceService.startReconnectWindow(studySessionId);
+        }
         presenceService.clearPresence(studySessionId);
         publish(SeatEventMessage.Type.DISCONNECTED, occupancy.getStudyChannel().getId(),
                 occupancy.getSeat(), occupancy.getMember(), session, now);
