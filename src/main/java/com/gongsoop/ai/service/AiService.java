@@ -1,5 +1,6 @@
 package com.gongsoop.ai.service;
 
+import com.gongsoop.ai.util.AiChatIntentClassifier;
 import com.gongsoop.ai.dto.request.SolveAiGeneratedQuestionRequest;
 import com.gongsoop.ai.dto.response.AiGeneratedQuestionSolveRecordResponse;
 import com.gongsoop.ai.dto.response.SolveAiGeneratedQuestionResponse;
@@ -48,6 +49,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -86,26 +88,59 @@ public class AiService {
     }
 
     @Transactional
-    public GenerateAiQuestionResponse generateQuestions(String email, GenerateAiQuestionRequest request) {
+    public GenerateAiQuestionResponse generateQuestions(
+            String email,
+            GenerateAiQuestionRequest request
+    ) {
         Long memberId = getCurrentMemberId(email);
 
         Map<String, Object> body = new LinkedHashMap<>();
 
-        body.put("topic", request.topic());
-        body.put("difficulty", request.difficulty());
-        body.put("question_type", request.questionType());
-        body.put("count", request.count());
-        body.put("include_explanation", request.includeExplanation());
-
-        GenerateAiQuestionResponse response = postToAiServer(
-                "/api/v1/questions/generate",
-                body,
-                GenerateAiQuestionResponse.class
+        body.put(
+                "topic",
+                request.topic()
         );
 
-        saveGeneratedQuestions(memberId, request, response);
+        body.put(
+                "difficulty",
+                request.difficulty()
+        );
 
-        return response;
+        body.put(
+                "question_type",
+                request.questionType()
+        );
+
+        body.put(
+                "count",
+                request.count()
+        );
+
+        body.put(
+                "include_explanation",
+                request.includeExplanation()
+        );
+
+        /*
+         * FastAPI에서 받은 시점에는
+         * aiGeneratedQuestionSetId와 aiGeneratedQuestionId가 없습니다.
+         */
+        GenerateAiQuestionResponse aiResponse =
+                postToAiServer(
+                        "/api/v1/questions/generate",
+                        body,
+                        GenerateAiQuestionResponse.class
+                );
+
+        /*
+         * Oracle 저장 후 실제 세트 ID와 문제 ID가 포함된
+         * 응답을 반환합니다.
+         */
+        return saveGeneratedQuestions(
+                memberId,
+                request,
+                aiResponse
+        );
     }
 
     @Transactional(readOnly = true)
@@ -174,45 +209,97 @@ public class AiService {
         aiGeneratedQuestionSetRepository.delete(questionSet);
     }
 
-    private void saveGeneratedQuestions(
+    /**
+     * FastAPI에서 생성한 문제를 Oracle에 저장한 뒤,
+     * 실제 DB ID가 포함된 응답을 생성합니다.
+     */
+    private GenerateAiQuestionResponse saveGeneratedQuestions(
             Long memberId,
             GenerateAiQuestionRequest request,
             GenerateAiQuestionResponse response
     ) {
-        if (response.questions() == null || response.questions().isEmpty()) {
-            return;
+        if (
+                response.questions() == null
+                        || response.questions().isEmpty()
+        ) {
+            return new GenerateAiQuestionResponse(
+                    null,
+                    List.of()
+            );
         }
 
-        AiGeneratedQuestionSet questionSet = AiGeneratedQuestionSet.create(
-                memberId,
-                request.topic(),
-                request.difficulty(),
-                request.questionType(),
-                response.questions().size(),
-                request.includeExplanation()
-        );
+        AiGeneratedQuestionSet questionSet =
+                AiGeneratedQuestionSet.create(
+                        memberId,
+                        request.topic(),
+                        request.difficulty(),
+                        request.questionType(),
+                        response.questions().size(),
+                        request.includeExplanation()
+                );
 
-        AiGeneratedQuestionSet savedSet = aiGeneratedQuestionSetRepository.save(questionSet);
+        AiGeneratedQuestionSet savedSet =
+                aiGeneratedQuestionSetRepository.save(
+                        questionSet
+                );
+
+        List<GeneratedQuestionResponse> savedQuestions =
+                new ArrayList<>();
 
         int order = 1;
 
-        for (GeneratedQuestionResponse generatedQuestion : response.questions()) {
-            AiGeneratedQuestion question = AiGeneratedQuestion.create(
-                    savedSet.getAiGeneratedQuestionSetId(),
-                    order,
-                    generatedQuestion.question(),
-                    writeChoicesJson(generatedQuestion.choices()),
-                    generatedQuestion.answer(),
-                    generatedQuestion.explanation(),
-                    generatedQuestion.era(),
-                    generatedQuestion.topic(),
-                    generatedQuestion.difficulty(),
-                    generatedQuestion.examTip()
+        for (
+                GeneratedQuestionResponse generatedQuestion
+                : response.questions()
+        ) {
+            AiGeneratedQuestion question =
+                    AiGeneratedQuestion.create(
+                            savedSet.getAiGeneratedQuestionSetId(),
+                            order,
+                            generatedQuestion.question(),
+                            writeChoicesJson(
+                                    generatedQuestion.choices()
+                            ),
+                            generatedQuestion.answer(),
+                            generatedQuestion.explanation(),
+                            generatedQuestion.era(),
+                            generatedQuestion.topic(),
+                            generatedQuestion.difficulty(),
+                            generatedQuestion.examTip()
+                    );
+
+            AiGeneratedQuestion savedQuestion =
+                    aiGeneratedQuestionRepository.save(
+                            question
+                    );
+
+            /*
+             * 저장된 엔티티의 실제 PK와 순서를 응답에 포함합니다.
+             */
+            savedQuestions.add(
+                    new GeneratedQuestionResponse(
+                            savedQuestion.getAiGeneratedQuestionId(),
+                            savedQuestion.getQuestionOrder(),
+                            savedQuestion.getQuestionText(),
+                            readChoicesJson(
+                                    savedQuestion.getChoicesJson()
+                            ),
+                            savedQuestion.getAnswerText(),
+                            savedQuestion.getExplanation(),
+                            savedQuestion.getEra(),
+                            savedQuestion.getTopic(),
+                            savedQuestion.getDifficulty(),
+                            savedQuestion.getExamTip()
+                    )
             );
 
-            aiGeneratedQuestionRepository.save(question);
             order++;
         }
+
+        return new GenerateAiQuestionResponse(
+                savedSet.getAiGeneratedQuestionSetId(),
+                savedQuestions
+        );
     }
 
     private AiGeneratedQuestionSet findGeneratedQuestionSet(Long setId, Long memberId) {
@@ -284,9 +371,25 @@ public class AiService {
         }
     }
 
-    public ChatAnswerResponse chat(ChatMessageRequest request) {
+    /**
+     * 세션을 사용하지 않는 단일 AI 대화입니다.
+     *
+     * 메시지 내용에 따라 한국사 시험 질의응답 또는
+     * 시험 공부 동기부여 API로 자동 분기합니다.
+     */
+    public ChatAnswerResponse chat(
+            ChatMessageRequest request
+    ) {
+        String aiPath =
+                AiChatIntentClassifier
+                        .isMotivationRequest(
+                                request.message()
+                        )
+                        ? "/api/v1/chat/motivation"
+                        : "/api/v1/chat/exam";
+
         return postToAiServer(
-                "/api/v1/chat/exam",
+                aiPath,
                 request,
                 ChatAnswerResponse.class
         );
@@ -441,32 +544,91 @@ public class AiService {
                 .toList();
     }
 
+    /**
+     * 채팅 세션에 사용자 메시지와 AI 답변을 저장합니다.
+     *
+     * 동기부여 요청:
+     * - FastAPI /api/v1/chat/motivation
+     *
+     * 한국사 시험 질문:
+     * - FastAPI /api/v1/chat/exam
+     */
+    @Transactional
     public ChatAnswerResponse sendChatMessage(
             String email,
             Long sessionId,
             ChatMessageRequest request
     ) {
-        Long memberId = getCurrentMemberId(email);
-        AiChatSession session = findSession(sessionId, memberId);
+        Long memberId =
+                getCurrentMemberId(
+                        email
+                );
 
+        AiChatSession session =
+                findSession(
+                        sessionId,
+                        memberId
+                );
+
+        /*
+         * 사용자가 실제로 입력한 원문을 DB에 저장합니다.
+         */
         aiChatMessageRepository.save(
-                AiChatMessage.user(session.getAiChatSessionId(), request.message())
+                AiChatMessage.user(
+                        session.getAiChatSessionId(),
+                        request.message()
+                )
         );
 
-        String prompt = buildSessionPrompt(session, request.message());
+        boolean motivationRequest =
+                AiChatIntentClassifier
+                        .isMotivationRequest(
+                                request.message()
+                        );
 
-        ChatAnswerResponse answerResponse = postToAiServer(
-                "/api/v1/chat/exam",
-                new ChatMessageRequest(prompt),
-                ChatAnswerResponse.class
-        );
+        String aiPath =
+                motivationRequest
+                        ? "/api/v1/chat/motivation"
+                        : "/api/v1/chat/exam";
 
+        /*
+         * 동기부여 요청에는 원문을 전달합니다.
+         *
+         * 한국사 문제 상담 세션에는 문제 내용과 사용자의 질문을
+         * 합쳐서 FastAPI로 전달합니다.
+         */
+        String prompt =
+                motivationRequest
+                        ? request.message()
+                        : buildSessionPrompt(
+                        session,
+                        request.message()
+                );
+
+        ChatAnswerResponse answerResponse =
+                postToAiServer(
+                        aiPath,
+                        new ChatMessageRequest(
+                                prompt
+                        ),
+                        ChatAnswerResponse.class
+                );
+
+        /*
+         * AI 응답도 같은 채팅 세션에 저장합니다.
+         */
         aiChatMessageRepository.save(
-                AiChatMessage.ai(session.getAiChatSessionId(), answerResponse.answer())
+                AiChatMessage.ai(
+                        session.getAiChatSessionId(),
+                        answerResponse.answer()
+                )
         );
 
         session.touch();
-        aiChatSessionRepository.save(session);
+
+        aiChatSessionRepository.save(
+                session
+        );
 
         return answerResponse;
     }

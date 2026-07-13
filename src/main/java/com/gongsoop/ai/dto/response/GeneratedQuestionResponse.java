@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import java.util.List;
 
 public record GeneratedQuestionResponse(
+        Long aiGeneratedQuestionId,
+        Integer questionOrder,
         String question,
         List<String> choices,
         String answer,

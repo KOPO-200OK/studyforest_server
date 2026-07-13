@@ -5,9 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface AiGeneratedQuestionRepository extends JpaRepository<AiGeneratedQuestion, Long> {
+public interface AiGeneratedQuestionRepository
+        extends JpaRepository<AiGeneratedQuestion, Long> {
 
     List<AiGeneratedQuestion> findByAiGeneratedQuestionSetIdOrderByQuestionOrderAsc(
+            Long aiGeneratedQuestionSetId
+    );
+
+    void deleteByAiGeneratedQuestionSetId(
             Long aiGeneratedQuestionSetId
     );
 }
