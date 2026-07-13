@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -195,6 +196,38 @@ class StudySessionServiceRealtimeTest {
         service.handleDisconnect(30L);
 
         verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void stalePresenceUsesOnlyRemainingReconnectWindow() {
+        StudySession session = session(StudySessionStatus.RUNNING);
+        SeatOccupancy occupancy = occupancyFor(session, NOW.minusMinutes(6));
+        when(occupancyRepository.findByStudySessionIdForUpdate(30L)).thenReturn(Optional.of(occupancy));
+
+        service.handleStalePresence(30L);
+
+        // lastSeen은 DB 스로틀(1분)만큼 실제 heartbeat보다 늦을 수 있어 5분 전으로 보정한다.
+        LocalDateTime expectedDisconnectedAt = NOW.minusMinutes(5);
+        assertThat(occupancy.getDisconnectedAt()).isEqualTo(expectedDisconnectedAt);
+        assertThat(occupancy.getReconnectDeadlineAt()).isEqualTo(NOW.plusMinutes(5));
+        verify(presenceService).startReconnectWindow(30L, Duration.ofMinutes(5));
+        verify(presenceService).clearPresence(30L);
+        assertThat(capturePublishedType()).isEqualTo(SeatEventMessage.Type.DISCONNECTED);
+    }
+
+    @Test
+    void stalePresencePastReconnectDeadlineDoesNotOpenNewWindow() {
+        StudySession session = session(StudySessionStatus.RUNNING);
+        SeatOccupancy occupancy = occupancyFor(session, NOW.minusMinutes(12));
+        when(occupancyRepository.findByStudySessionIdForUpdate(30L)).thenReturn(Optional.of(occupancy));
+
+        service.handleStalePresence(30L);
+
+        assertThat(occupancy.getDisconnectedAt()).isEqualTo(NOW.minusMinutes(11));
+        assertThat(occupancy.getReconnectDeadlineAt()).isEqualTo(NOW.minusMinutes(1));
+        verify(presenceService, never()).startReconnectWindow(eq(30L), any(Duration.class));
+        verify(presenceService).clearReconnect(30L);
+        verify(presenceService).clearPresence(30L);
     }
 
     // --- 자동 퇴실 ---

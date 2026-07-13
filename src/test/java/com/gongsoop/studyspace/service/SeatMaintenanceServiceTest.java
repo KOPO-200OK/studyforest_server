@@ -91,8 +91,8 @@ class SeatMaintenanceServiceTest {
 
         maintenance.presenceSweep();
 
-        verify(studySessionService, never()).handleDisconnect(3L);
-        verify(studySessionService).handleDisconnect(4L);
+        verify(studySessionService, never()).handleStalePresence(3L);
+        verify(studySessionService).handleStalePresence(4L);
     }
 
     private StudySession sessionWithId(Long id) {
