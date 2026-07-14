@@ -1,5 +1,6 @@
 package com.gongsoop.member.service;
 
+import com.gongsoop.member.dto.request.SignupValidationRequest;
 import com.gongsoop.global.exception.BusinessException;
 import com.gongsoop.global.exception.DuplicateEmailException;
 import com.gongsoop.global.security.JwtProvider;
@@ -49,16 +50,34 @@ public class MemberService {
                 tokenService;
     }
 
+    /**
+     * 회원가입 첫 번째 화면의 기본 정보를 검증합니다.
+     *
+     * 형식 검증은 Controller의 @Valid에서 수행하고,
+     * Service에서는 이메일 중복 여부를 확인합니다.
+     *
+     * 이 메서드에서는 회원 데이터를 저장하지 않습니다.
+     */
+    @Transactional(readOnly = true)
+    public void validateSignup(
+            SignupValidationRequest request
+    ) {
+        validateDuplicateEmail(
+                request.email()
+        );
+    }
+
     public void signup(
             SignupRequest request
     ) {
-        if (
-                memberRepository.existsByEmail(
-                        request.email()
-                )
-        ) {
-            throw new DuplicateEmailException();
-        }
+        /*
+         * 첫 화면 검증 이후 다른 사용자가 동일 이메일로
+         * 먼저 가입할 수 있으므로 최종 저장 직전에도
+         * 중복 검사를 다시 수행합니다.
+         */
+        validateDuplicateEmail(
+                request.email()
+        );
 
         String hashedPassword =
                 passwordEncoder.encode(
@@ -309,6 +328,21 @@ public class MemberService {
                 member.getEmail(),
                 member.getUserRole().name()
         );
+    }
+
+    private void validateDuplicateEmail(
+            String email
+    ) {
+        String normalizedEmail =
+                email.trim();
+
+        if (
+                memberRepository.existsByEmail(
+                        normalizedEmail
+                )
+        ) {
+            throw new DuplicateEmailException();
+        }
     }
 
     private Member getActiveMember(
