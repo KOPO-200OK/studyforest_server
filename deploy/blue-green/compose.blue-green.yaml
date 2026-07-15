@@ -1,0 +1,126 @@
+name: studyforest
+
+x-server-common: &server-common
+  build:
+    context: ./studyforest_server
+  env_file:
+    - ./studyforest_server/.env
+  environment:
+    SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-cloud}
+    REDIS_HOST: redis
+    TZ: Asia/Seoul
+    JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    TNS_ADMIN: /wallet
+  volumes:
+    - /home/ubuntu/Wallet_DinkDB:/wallet:ro
+  restart: unless-stopped
+  depends_on:
+    redis:
+      condition: service_healthy
+  networks:
+    - studyforest
+
+x-ai-common: &ai-common
+  build:
+    context: ./studyforest_AI
+  env_file:
+    - ./studyforest_AI/.env
+  restart: unless-stopped
+  networks:
+    - studyforest
+
+x-client-common: &client-common
+  build:
+    context: ./studyforest_client
+  restart: unless-stopped
+  networks:
+    - studyforest
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - studyforest
+
+  ai-blue:
+    <<: *ai-common
+    ports:
+      - "127.0.0.1:8001:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  ai-green:
+    <<: *ai-common
+    ports:
+      - "127.0.0.1:8002:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  server-blue:
+    <<: *server-common
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-cloud}
+      REDIS_HOST: redis
+      AI_SERVER_BASE_URL: http://ai-blue:8000
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+      TNS_ADMIN: /wallet
+    ports:
+      - "127.0.0.1:8081:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      ai-blue:
+        condition: service_healthy
+
+  server-green:
+    <<: *server-common
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-cloud}
+      REDIS_HOST: redis
+      AI_SERVER_BASE_URL: http://ai-green:8000
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+      TNS_ADMIN: /wallet
+    ports:
+      - "127.0.0.1:8082:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      ai-green:
+        condition: service_healthy
+
+  client-blue:
+    <<: *client-common
+    environment:
+      VITE_PROXY_TARGET: http://server-blue:8080
+      VITE_WS_PROXY_TARGET: ws://server-blue:8080
+    ports:
+      - "127.0.0.1:5173:5173"
+
+  client-green:
+    <<: *client-common
+    environment:
+      VITE_PROXY_TARGET: http://server-green:8080
+      VITE_WS_PROXY_TARGET: ws://server-green:8080
+    ports:
+      - "127.0.0.1:5174:5173"
+
+networks:
+  studyforest:
+    name: studyforest
