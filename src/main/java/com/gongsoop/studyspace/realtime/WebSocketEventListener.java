@@ -47,7 +47,7 @@ public class WebSocketEventListener {
             }
         } catch (RuntimeException e) {
             // 낙관락 경합 등은 다른 처리가 선점한 것으로 보고 무해하게 넘긴다.
-            log.debug("WS 끊김 처리 경합/실패: sessionId={}, msg={}", studySessionId, e.getMessage());
+            log.debug("WS 끊김 처리 경합/실패: sessionId={}", studySessionId);
         } finally {
             presenceService.unlink(wsSessionId);
         }

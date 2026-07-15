@@ -76,8 +76,7 @@ public class SeatMaintenanceService {
             if (presenceService.isReconnectWindowOpen(sessionId)) {
                 continue; // Redis 1차 판정: 아직 대기창 유효 → 보류
             }
-            runSafely("reconnectTimeout", sessionId,
-                    () -> studySessionService.autoTerminateReconnectTimeout(sessionId));
+            runSafely(() -> studySessionService.autoTerminateReconnectTimeout(sessionId));
         }
     }
 
@@ -88,8 +87,7 @@ public class SeatMaintenanceService {
                 .findAllByStatusAndPauseDeadlineAtBefore(StudySessionStatus.PAUSED, now);
         for (StudySession session : candidates) {
             Long sessionId = session.getId();
-            runSafely("pauseTimeout", sessionId,
-                    () -> studySessionService.autoTerminatePauseTimeout(sessionId));
+            runSafely(() -> studySessionService.autoTerminatePauseTimeout(sessionId));
         }
     }
 
@@ -102,17 +100,16 @@ public class SeatMaintenanceService {
             if (presenceService.isAlive(sessionId)) {
                 continue; // 아직 살아 있으면 끊김 아님
             }
-            runSafely("presenceStale", sessionId,
-                    () -> studySessionService.handleStalePresence(sessionId));
+            runSafely(() -> studySessionService.handleStalePresence(sessionId));
         }
     }
 
-    private void runSafely(String task, Long sessionId, Runnable action) {
+    private void runSafely(Runnable action) {
         try {
             action.run();
         } catch (RuntimeException e) {
             // 낙관락 경합 등 다른 처리가 선점한 경우 포함 — 다음 주기에 다시 시도된다.
-            log.debug("{} 처리 건너뜀: sessionId={}, msg={}", task, sessionId, e.getMessage());
+            log.debug("스케줄 처리 건너뜀");
         }
     }
 }

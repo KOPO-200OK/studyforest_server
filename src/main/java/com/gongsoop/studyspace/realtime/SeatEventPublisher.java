@@ -39,7 +39,7 @@ public class SeatEventPublisher {
             redis.convertAndSend(RedisConfig.SEAT_EVENTS_CHANNEL, objectMapper.writeValueAsString(message));
         } catch (JsonProcessingException e) {
             log.warn("좌석 이벤트 직렬화 실패: channelId={}, seatId={}",
-                    message.channelId(), message.seatId(), e);
+                    message.channelId(), message.seatId());
         }
     }
 }

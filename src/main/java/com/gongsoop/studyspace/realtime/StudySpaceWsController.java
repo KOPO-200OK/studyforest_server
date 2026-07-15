@@ -44,11 +44,16 @@ public class StudySpaceWsController {
             SimpMessageHeaderAccessor accessor
     ) {
         String email = principal == null ? null : principal.getName();
-        if (!studySessionService.isSessionOwner(sessionId, email)) {
-            log.warn("소유자가 아닌 세션 join 시도 차단: sessionId={}, user={}", sessionId, email);
+        String wsSessionId = accessor.getSessionId();
+        if (wsSessionId == null) {
+            log.warn("STOMP join 세션 ID 누락");
             return;
         }
-        presenceService.linkWsSession(accessor.getSessionId(), sessionId);
+        if (!studySessionService.isSessionOwner(sessionId, email)) {
+            log.warn("소유자가 아닌 세션 join 시도 차단");
+            return;
+        }
+        presenceService.linkWsSession(wsSessionId, sessionId);
     }
 
     @MessageMapping("/sessions/{sessionId}/heartbeat")
@@ -58,16 +63,20 @@ public class StudySpaceWsController {
             SimpMessageHeaderAccessor accessor
     ) {
         String email = principal == null ? null : principal.getName();
+        String wsSessionId = accessor.getSessionId();
+        if (wsSessionId == null) {
+            log.warn("STOMP heartbeat 세션 ID 누락");
+            return;
+        }
         try {
             SessionTickResponse tick = studySessionService.heartbeat(sessionId, email);
             // 매핑 보정(첫 heartbeat가 join보다 먼저 도착한 경우 등)
-            presenceService.linkWsSession(accessor.getSessionId(), sessionId);
+            presenceService.linkWsSession(wsSessionId, sessionId);
             if (email != null) {
                 messagingTemplate.convertAndSendToUser(email, "/queue/session", tick);
             }
         } catch (RuntimeException e) {
-            log.debug("heartbeat 처리 실패: sessionId={}, user={}, msg={}",
-                    sessionId, email, e.getMessage());
+            log.debug("heartbeat 처리 실패");
         }
     }
 }
