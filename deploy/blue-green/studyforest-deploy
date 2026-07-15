@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+readonly ROOT=/home/ubuntu/StudyForest
+readonly BRANCH=dev
+readonly COMPOSE_FILE="$ROOT/compose.blue-green.yaml"
+readonly NGINX_DIR=/etc/nginx/studyforest
+readonly ACTIVE_LINK="$NGINX_DIR/active-upstreams.conf"
+readonly LOCK_FILE=/tmp/studyforest-deploy.lock
+readonly DRAIN_SECONDS="${DRAIN_SECONDS:-60}"
+
+case "${SSH_ORIGINAL_COMMAND:-${1:-}}" in
+  "deploy server"|"deploy client"|"deploy ai"|"deploy stack") ;;
+  "plan")
+    if [[ "$(readlink -f "$ACTIVE_LINK" 2>/dev/null || true)" == *upstreams-green.conf ]]; then
+      printf 'active=green target=blue\n'
+    else
+      printf 'active=blue target=green\n'
+    fi
+    sudo docker compose -f "$COMPOSE_FILE" config --quiet
+    printf 'compose=valid (no containers were changed)\n'
+    exit 0
+    ;;
+  "status")
+    sudo docker compose -f "$COMPOSE_FILE" ps
+    readlink "$ACTIVE_LINK" || true
+    exit 0
+    ;;
+  *)
+    printf 'Denied: deploy server, deploy client, deploy ai, deploy stack, plan, or status is allowed.\n' >&2
+    exit 126
+    ;;
+esac
+
+exec 9>"$LOCK_FILE"
+flock --wait 300 9
+
+if [[ "$(readlink -f "$ACTIVE_LINK" 2>/dev/null || true)" == *upstreams-green.conf ]]; then
+  active=green
+  target=blue
+  server_port=8081
+  ai_port=8001
+  client_port=5173
+else
+  active=blue
+  target=green
+  server_port=8082
+  ai_port=8002
+  client_port=5174
+fi
+
+for repository in studyforest_server studyforest_client studyforest_AI; do
+  git -C "$ROOT/$repository" fetch origin "$BRANCH"
+  git -C "$ROOT/$repository" checkout "$BRANCH"
+  git -C "$ROOT/$repository" merge --ff-only "origin/$BRANCH"
+done
+
+target_services=("ai-$target" "server-$target" "client-$target")
+sudo docker compose -f "$COMPOSE_FILE" build "${target_services[@]}"
+sudo docker compose -f "$COMPOSE_FILE" up -d --no-deps "ai-$target"
+
+wait_for_http() {
+  local name="$1"
+  local url="$2"
+  local attempts="${3:-30}"
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    if curl --fail --silent --show-error --max-time 5 "$url" >/dev/null; then
+      printf '%s is ready.\n' "$name"
+      return 0
+    fi
+    sleep 2
+  done
+  printf '%s readiness check failed: %s\n' "$name" "$url" >&2
+  return 1
+}
+
+rollback_target() {
+  printf 'Deployment failed; keeping %s active and removing failed %s slot.\n' "$active" "$target" >&2
+  sudo docker compose -f "$COMPOSE_FILE" stop "${target_services[@]}" || true
+}
+trap rollback_target ERR
+
+wait_for_http "ai-$target" "http://127.0.0.1:$ai_port/health"
+sudo docker compose -f "$COMPOSE_FILE" up -d --no-deps "server-$target" "client-$target"
+wait_for_http "server-$target" "http://127.0.0.1:$server_port/api/v1/health" 60
+wait_for_http "client-$target" "http://127.0.0.1:$client_port/" 30
+
+sudo ln -sfn "$NGINX_DIR/upstreams-$target.conf" "$ACTIVE_LINK"
+if ! sudo nginx -t; then
+  sudo ln -sfn "$NGINX_DIR/upstreams-$active.conf" "$ACTIVE_LINK"
+  sudo nginx -t
+  exit 1
+fi
+sudo systemctl reload nginx
+
+trap - ERR
+printf 'Traffic switched from %s to %s. Draining for %ss.\n' "$active" "$target" "$DRAIN_SECONDS"
+sleep "$DRAIN_SECONDS"
+sudo docker compose -f "$COMPOSE_FILE" stop "ai-$active" "server-$active" "client-$active"
+sudo docker image prune -f
+sudo docker compose -f "$COMPOSE_FILE" ps
