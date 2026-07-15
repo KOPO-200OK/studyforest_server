@@ -19,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Locale;
+
 @Service
 @Transactional(readOnly = true)
 public class JangwonService {
@@ -269,7 +271,7 @@ public class JangwonService {
         }
 
         try {
-            return JangwonStatus.valueOf(status.trim().toUpperCase());
+            return JangwonStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new BusinessException(
                     "INVALID_JANGWON_STATUS",

@@ -45,10 +45,21 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+spotbugs {
+    reportLevel = 'low'
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+tasks.named('spotbugsMain') {
+    reports {
+        html.required = true
+        xml.required = true
+    }
 }

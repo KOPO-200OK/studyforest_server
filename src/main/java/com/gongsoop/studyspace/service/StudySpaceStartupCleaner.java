@@ -65,7 +65,7 @@ public class StudySpaceStartupCleaner {
                     studySessionService.terminateOrphanSession(sessionId);
                     orphans++;
                 } catch (RuntimeException e) {
-                    log.debug("유령 세션 종결 실패: sessionId={}, msg={}", sessionId, e.getMessage());
+                    log.debug("유령 세션 종결 실패: sessionId={}", sessionId);
                 }
                 continue;
             }

@@ -33,6 +33,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.gongsoop.mockexam.dto.request.MockExamSaveAnswersRequest;
 
+import java.util.Locale;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -360,7 +362,7 @@ public class MockExamService {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.like(
                             criteriaBuilder.lower(root.get("era")),
-                            "%" + era.toLowerCase() + "%"
+                            "%" + era.toLowerCase(Locale.ROOT) + "%"
                     )
             );
         }
@@ -369,7 +371,7 @@ public class MockExamService {
             specification = specification.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.like(
                             criteriaBuilder.lower(root.get("category")),
-                            "%" + category.toLowerCase() + "%"
+                            "%" + category.toLowerCase(Locale.ROOT) + "%"
                     )
             );
         }

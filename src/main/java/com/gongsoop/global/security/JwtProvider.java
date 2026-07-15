@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
-public class JwtProvider {
+public final class JwtProvider {
 
     private static final long ACCESS_TOKEN_EXPIRATION_MS = 30 * 60 * 1000L;           // 30분
     private static final long REFRESH_TOKEN_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000L; // 7일
